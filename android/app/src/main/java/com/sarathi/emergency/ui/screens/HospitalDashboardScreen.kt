@@ -119,12 +119,17 @@ fun HospitalDashboardScreen(
                 if (!exists) {
                     val newCase = IncomingCase(
                         id = simId,
-                        patientName = "S.O.S ($simType)",
+                        patientPhone = "+91 99887 76655",
                         emergencyType = simType,
-                        status = simStatus,
+                        status = "Incoming", // or simStatus, but standard transition starts with Incoming
                         eta = sessionManager.getSimulatedETA(),
-                        distance = 2.4,
-                        isPriority = true
+                        driverName = "Simulation Unit",
+                        vehicleNumber = "SARATHI-DEMO-01",
+                        priority = "Critical",
+                        time = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date()),
+                        fromArea = "Active SOS Area",
+                        ambulanceLat = sessionManager.getSimulatedSOSLat(),
+                        ambulanceLng = sessionManager.getSimulatedSOSLng()
                     )
                     caseList = listOf(newCase) + caseList
                 } else {

@@ -112,9 +112,32 @@ fun PoliceDashboardScreen(
         while(true) {
             val simId = sessionManager.getSimulatedSOS()
             if (simId != null) {
-                // UPDATE RELEVANT GC STATUS IF FOUND
-                alertList = alertList.map { 
-                    if (it.id == "GC-001") it.copy(status = "Transporting", eta = 4) else it 
+                val simType = sessionManager.getSimulatedSOSType()
+                val simStatus = sessionManager.getSimulatedSOSStatus()
+                
+                // AUTO-INJECT CORRIDOR ALERT FOR TRANSPORTING PATIENTS
+                if (simStatus == "Transporting Patient") {
+                    val vehicleNum = "SARATHI-AMB-$simId"
+                    val exists = alertList.any { it.vehicleNumber == vehicleNum }
+                    if (!exists) {
+                        val newAlert = GreenCorridorAlert(
+                            id = "POL-${System.currentTimeMillis() % 10000}",
+                            type = simType,
+                            from = "Abids Junction (Live)",
+                            to = "Emergency Unit",
+                            status = "Priority Clearance Active",
+                            eta = 2,
+                            priority = "Critical",
+                            time = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date()),
+                            driverName = "Simulation Unit",
+                            vehicleNumber = vehicleNum,
+                            fromLat = latitude,
+                            fromLng = longitude,
+                            toLat = 17.4000,
+                            toLng = 78.5000
+                        )
+                        alertList = listOf(newAlert) + alertList
+                    }
                 }
             }
             delay(5000)
