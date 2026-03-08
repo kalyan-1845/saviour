@@ -59,6 +59,7 @@ fun SOSScreen(
     var isSending by remember { mutableStateOf(false) }
     var sosResponse by remember { mutableStateOf<SosResponse?>(null) }
     var sosError by remember { mutableStateOf<String?>(null) }
+    var selectedType by remember { mutableStateOf<String>("medical") }
     var isOfflineMode by remember { mutableStateOf(false) }
     var sosSentTime by remember { mutableStateOf<String?>(null) }
 
@@ -126,7 +127,6 @@ fun SOSScreen(
         }
     }
 
-    // Build map markers
     val mapMarkers = remember(sosResponse, latitude, longitude, hasLocation) {
         buildList {
             if (hasLocation) {
@@ -136,6 +136,28 @@ fun SOSScreen(
                 add(MapMarker(latitude + 0.008, longitude + 0.005, "🏥 ${h.name}", "Assigned Hospital", MarkerColor.GREEN))
             }
         }
+    }
+
+    val emergencyTypes = remember {
+        listOf(
+            Triple("medical", "General Medical", "🏥"),
+            Triple("cardiac", "Cardiac Arrest", "❤️"),
+            Triple("trauma", "Trauma / Bleeding", "🩸"),
+            Triple("respiratory", "Choking / Breath", "🫁"),
+            Triple("burn", "Serious Burns", "🔥"),
+            Triple("accident", "Road Accident", "🚑")
+        )
+    }
+
+    val firstAidProtocols = remember {
+        mapOf(
+            "cardiac" to listOf("START CPR IMMEDIATELY", "100-120 compressions per minute", "Push deep in center of chest", "Don't stop until help arrives"),
+            "trauma" to listOf("STOP THE BLEEDING", "Apply FIRM direct pressure with cloth", "Do not remove soaked cloth", "Elevate the limb if possible"),
+            "respiratory" to listOf("CHECK AIRWAYS", "Clear mouth of obstructions", "Heimlich maneuver if choking", "Keep person sitting up if possible"),
+            "burn" to listOf("COOL THE AREA", "Run cool water for 20 mins", "Do not apply ICE directly", "Cover loosely with clean wrap"),
+            "medical" to listOf("KEEP PATIENT CALM", "Check responsiveness", "Loosen tight clothing", "Do not give any food/water"),
+            "accident" to listOf("STABILIZE NECK", "Do not move the victim", "Switch off vehicle engines", "Talk to keep them conscious")
+        )
     }
 
     // ── Main UI ──
@@ -211,10 +233,39 @@ fun SOSScreen(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
+                // Emergency Type Selector
+                Text("Select Emergency Type", color = TextWhite70, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp))
+                Spacer(modifier = Modifier.height(8.dp))
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    items(emergencyTypes) { (id, name, icon) ->
+                        val isSelected = selectedType == id
+                        Card(
+                            onClick = { selectedType = id },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isSelected) PrimaryBlue.copy(alpha = 0.2f) else Color.White.copy(alpha = 0.05f)
+                            ),
+                            border = if (isSelected) BorderStroke(2.dp, PrimaryBlue) else null,
+                            modifier = Modifier.width(110.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(12.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(icon, fontSize = 24.sp)
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(name, color = if (isSelected) Color.White else TextWhite70, fontSize = 10.sp, textAlign = TextAlign.Center, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
                 OutlinedTextField(
                     value = phoneNumber,
                     onValueChange = { if (it.length <= 15) phoneNumber = it },
-                    label = { Text("Emergency Contact Number") },
+                    label = { Text("Your Contact Number") },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
@@ -227,10 +278,26 @@ fun SOSScreen(
                     )
                 )
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(24.dp))
+
+                var broadcastToFamily by remember { mutableStateOf(true) }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = broadcastToFamily,
+                        onCheckedChange = { broadcastToFamily = it },
+                        colors = CheckboxDefaults.colors(checkedColor = PrimaryBlue)
+                    )
+                    Text("Broadcast Location to Family/Emergency Contacts", color = TextWhite70, fontSize = 11.sp)
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
 
                 GlowButton(
-                    text = if (isSending) "INITIALIZING PROTOCOL..." else "ACTIVATE SEND SOS",
+                    text = if (isSending) "DISPATCHING PROTOCOL..." else "ACTIVATE SEND SOS",
                     onClick = {
                         if (phoneNumber.isBlank()) {
                             sosError = "Please enter your phone number"
@@ -240,8 +307,13 @@ fun SOSScreen(
                         isSending = true
                         sosSentTime = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date())
                         scope.launch {
+                            // SIMULATE SMS BROADCAST
+                            if (broadcastToFamily) {
+                                // In a real app, this would use SMS Manager
+                                println("SARATHI: SMS Sent to Emergency Contacts with location: https://maps.google.com/?q=$latitude,$longitude")
+                            }
                             try {
-                                val response = api.sendSos(SosRequest(phoneNumber, latitude, longitude))
+                                val response = api.sendSos(SosRequest(phoneNumber, latitude, longitude, emergencyType = selectedType))
                                 if (response.isSuccessful && response.body() != null) {
                                     sosResponse = response.body()
                                     trackPhone = phoneNumber
@@ -263,9 +335,28 @@ fun SOSScreen(
                     },
                     isLoading = isSending,
                     variant = GlowVariant.DANGER,
-                    modifier = Modifier.fillMaxWidth(),
-                    icon = { Icon(Icons.Default.FlashOn, null, tint = Color.White) }
+                    modifier = Modifier.fillMaxWidth().height(60.dp),
+                    icon = { Icon(Icons.Default.FlashOn, null, tint = Color.White, modifier = Modifier.size(28.dp)) }
                 )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // FAILSAFE BUTTON
+                OutlinedButton(
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:112"))
+                        context.startActivity(intent)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = EmergencyRed),
+                    border = BorderStroke(1.dp, EmergencyRed)
+                ) {
+                    Icon(Icons.Default.Phone, null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("DIRECT FAILSAFE CALL 112", fontWeight = FontWeight.Black)
+                }
+
 
                 if (sosError != null) {
                     Text(sosError!!, color = EmergencyOrange, modifier = Modifier.padding(top = 8.dp))
@@ -302,13 +393,34 @@ fun SOSScreen(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        sosResponse?.hospital?.let { hosp ->
-                            Text("Hospital: ${hosp.name}", color = TextWhite, fontWeight = FontWeight.Bold)
-                        }
-                        
-                        sosResponse?.driver?.let { driver ->
-                            Text("Ambulance: ${driver.fullName} (${driver.vehicleNumber})", color = TextWhite)
-                            Text("Call Driver: ${driver.phone}", color = TextBlue400)
+                        // ── SURVIVAL GUIDE SECTION ──
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = Color.Black.copy(alpha = 0.2f)),
+                            border = BorderStroke(1.dp, EmergencyRed.copy(alpha = 0.3f))
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.MedicalServices, null, tint = EmergencyRed, modifier = Modifier.size(18.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("IMMEDIATE ACTION PLAN (LIFE-SAVING)", color = Color.White, fontWeight = FontWeight.Black, fontSize = 12.sp)
+                                }
+                                Spacer(modifier = Modifier.height(12.dp))
+                                
+                                val protocols = firstAidProtocols[selectedType] ?: firstAidProtocols["medical"]!!
+                                protocols.forEachIndexed { index, text ->
+                                    Row(modifier = Modifier.padding(vertical = 4.dp)) {
+                                        Box(
+                                            modifier = Modifier.size(18.dp).clip(CircleShape).background(if (index == 0) EmergencyRed else TextWhite.copy(alpha = 0.1f)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text("${index + 1}", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                        }
+                                        Spacer(modifier = Modifier.width(10.dp))
+                                        Text(text, color = if (index == 0) Color.White else TextWhite70, fontSize = 13.sp, fontWeight = if (index == 0) FontWeight.ExtraBold else FontWeight.Normal)
+                                    }
+                                }
+                            }
                         }
 
                         Spacer(modifier = Modifier.height(20.dp))

@@ -38,7 +38,8 @@ import com.sarathi.emergency.ui.components.MarkerColor
 import com.sarathi.emergency.ui.components.MapRoute
 import com.sarathi.emergency.ui.components.OfflineMapView
 import com.sarathi.emergency.ui.theme.*
-import com.sarathi.emergency.util.LocationHelper
+import android.content.Intent
+import com.sarathi.emergency.services.BackgroundLocationService
 import kotlinx.coroutines.launch
 
 /**
@@ -277,7 +278,10 @@ fun ActiveRouteScreen(
                         // Complete
                         GlowButton(
                             text = "Complete",
-                            onClick = onComplete,
+                            onClick = {
+                                context.stopService(Intent(context, BackgroundLocationService::class.java))
+                                onComplete()
+                            },
                             variant = GlowVariant.SUCCESS,
                             modifier = Modifier.weight(1f),
                             icon = { Icon(Icons.Default.CheckCircle, null, tint = Color.White, modifier = Modifier.size(18.dp)) }
@@ -288,7 +292,7 @@ fun ActiveRouteScreen(
 
                     // Open in Google Maps navigation
                     GlowButton(
-                        text = "🗺️ Open Google Maps",
+                        text = "🚀 NAVIGATE TO PATIENT (HIGH PRIORITY)",
                         onClick = {
                             val uri = Uri.parse("google.navigation:q=$destLat,$destLng&mode=d")
                             val intent = Intent(Intent.ACTION_VIEW, uri)
@@ -298,7 +302,7 @@ fun ActiveRouteScreen(
                                 context.startActivity(Intent(Intent.ACTION_VIEW, browserUri))
                             }
                         },
-                        variant = GlowVariant.PRIMARY,
+                        variant = GlowVariant.DANGER,
                         modifier = Modifier.fillMaxWidth()
                     )
 

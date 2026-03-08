@@ -44,6 +44,9 @@ interface SarathiApi {
     @POST("api/driver/notify")
     suspend fun notifyAuthorities(@Body request: NotifyRequest): Response<NotifyResponse>
 
+    @POST("api/driver/update-location")
+    suspend fun updateDriverLocation(@Body request: DriverLocationRequest): Response<GenericResponse>
+
     // ══════════════════════════════════════
     //  HOSPITALS
     // ══════════════════════════════════════

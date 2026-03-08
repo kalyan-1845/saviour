@@ -39,6 +39,8 @@ import com.sarathi.emergency.ui.components.MarkerColor
 import com.sarathi.emergency.ui.components.OfflineMapView
 import com.sarathi.emergency.ui.theme.*
 import com.sarathi.emergency.util.LocationHelper
+import android.content.Intent
+import com.sarathi.emergency.services.BackgroundLocationService
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -249,8 +251,13 @@ fun DriverDashboardScreen(
                         scope.launch {
                             try {
                                 api.selectEmergency(EmergencySelectRequest(driverId = sessionManager.getDriverId(), emergencyType = selected.apiType, latitude = latitude, longitude = longitude))
+                                // START BACKGROUND TRACK SERVICE
+                                context.startService(Intent(context, BackgroundLocationService::class.java))
                                 onNavigateToHospitalSelection()
-                            } catch (_: Exception) { onNavigateToHospitalSelection() } finally { isLoading = false }
+                            } catch (_: Exception) { 
+                                context.startService(Intent(context, BackgroundLocationService::class.java))
+                                onNavigateToHospitalSelection() 
+                            } finally { isLoading = false }
                         }
                     },
                     isLoading = isLoading, variant = GlowVariant.PRIMARY, modifier = Modifier.fillMaxWidth()

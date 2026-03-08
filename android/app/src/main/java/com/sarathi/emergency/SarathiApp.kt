@@ -19,6 +19,7 @@ class SarathiApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        createNotificationChannel()
 
         sessionManager = SessionManager(this)
 

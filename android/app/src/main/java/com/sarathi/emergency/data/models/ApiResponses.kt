@@ -190,6 +190,19 @@ data class NotifyLive(
     val etaMinutes: Int? = null
 )
 
+// ─── Location Update ───
+data class DriverLocationRequest(
+    val driverId: String,
+    val latitude: Double,
+    val longitude: Double,
+    val status: String = "active"
+)
+
+data class GenericResponse(
+    val success: Boolean = false,
+    val message: String? = null
+)
+
 // ─── Generic Error ───
 data class ApiError(
     val error: String = ""
