@@ -2,7 +2,6 @@ package com.sarathi.emergency.ui.screens
 
 import android.Manifest
 import android.content.Context
-import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -39,7 +38,9 @@ import com.sarathi.emergency.ui.components.MapRoute
 import com.sarathi.emergency.ui.components.OfflineMapView
 import com.sarathi.emergency.ui.theme.*
 import android.content.Intent
+import androidx.compose.foundation.clickable
 import com.sarathi.emergency.services.BackgroundLocationService
+import com.sarathi.emergency.util.LocationHelper
 import kotlinx.coroutines.launch
 
 /**
@@ -61,6 +62,7 @@ fun ActiveRouteScreen(
     var latitude by remember { mutableDoubleStateOf(17.4426) }
     var longitude by remember { mutableDoubleStateOf(78.5006) }
     var hasLocation by remember { mutableStateOf(false) }
+    var notifyResult by remember { mutableStateOf<NotifyResponse?>(null) }
     var notifyLoading by remember { mutableStateOf(false) }
     var voiceEnabled by remember { mutableStateOf(true) }
     var showRerouteDialog by remember { mutableStateOf(false) }

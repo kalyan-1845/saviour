@@ -4,9 +4,11 @@ import android.Manifest
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.*
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,6 +23,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -32,6 +36,7 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.sarathi.emergency.data.api.SarathiApi
 import com.sarathi.emergency.data.models.*
+import com.sarathi.emergency.services.BackgroundLocationService
 import com.sarathi.emergency.ui.components.GlowButton
 import com.sarathi.emergency.ui.components.GlowVariant
 import com.sarathi.emergency.ui.components.MapMarker
@@ -70,8 +75,9 @@ fun SOSScreen(
     var locationAttempted by remember { mutableStateOf(false) }
 
     // Tracking state
-    var isTracking by remember { mutableStateOf(false) }
-    var trackPhone by remember { mutableStateOf("") }
+    var notifyResult by remember { mutableStateOf<NotifyResponse?>(null) }
+    var notifyLoading by remember { mutableStateOf(false) }
+    var voiceEnabled by remember { mutableStateOf(true) }
     var trackResult by remember { mutableStateOf<TrackResponse?>(null) }
     var trackError by remember { mutableStateOf<String?>(null) }
 
@@ -378,6 +384,9 @@ fun SOSScreen(
                 }
 
 
+                // MOVED OUT OF THE DISPATCH BLOCK
+            } else {
+                // ── SOS SUCCESS STATE ──
                 if (sosResponse != null) {
                     Card(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
@@ -394,8 +403,6 @@ fun SOSScreen(
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                 }
-            } else {
-                // ── SOS SUCCESS STATE ──
                 Card(
                     shape = RoundedCornerShape(20.dp),
                     colors = CardDefaults.cardColors(containerColor = SuccessGreen.copy(alpha = 0.1f)),
