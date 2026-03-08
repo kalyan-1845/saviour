@@ -113,10 +113,13 @@ fun DriverDashboardScreen(
                     if (simulatedId != null) {
                         activeTrip = AssignedTrip(
                             id = simulatedId,
-                            status = "assigned",
-                            emergencyType = "medical",
+                            status = sessionManager.getSimulatedSOSStatus(),
+                            emergencyType = sessionManager.getSimulatedSOSType(),
                             phone = "9988776655",
-                            pickupLocation = TripLocation(latitude + 0.002, longitude + 0.003)
+                            pickupLocation = TripLocation(
+                                sessionManager.getSimulatedSOSLat(),
+                                sessionManager.getSimulatedSOSLng()
+                            )
                         )
                     } else {
                         activeTrip = null

@@ -15,7 +15,12 @@ class SessionManager(context: Context) {
         private const val KEY_DRIVER = "current_driver"
         private const val KEY_IS_LOGGED_IN = "is_logged_in"
         private const val KEY_DRIVER_ID = "driver_id"
-        private const val KEY_SIMULATED_SOS = "simulated_sos"
+        private const val KEY_SIMULATED_SOS_ID = "sim_sos_id"
+        private const val KEY_SIMULATED_SOS_TYPE = "sim_sos_type"
+        private const val KEY_SIMULATED_SOS_STATUS = "sim_sos_status"
+        private const val KEY_SIMULATED_SOS_LAT = "sim_sos_lat"
+        private const val KEY_SIMULATED_SOS_LNG = "sim_sos_lng"
+        private const val KEY_SIMULATED_ETA = "sim_sos_eta"
     }
 
     fun saveDriverSession(driver: Driver) {
@@ -48,23 +53,38 @@ class SessionManager(context: Context) {
     }
 
     /**
-     * Store a simulated SOS trip ID locally for cross-screen testing (on the same device).
+     * Store entire simulated mission state for perfectly synchronized demos across all dashboards.
      */
-    fun saveSimulatedSOS(tripId: String) {
-        prefs.edit().putString(KEY_SIMULATED_SOS, tripId).apply()
+    fun saveSimulatedMission(id: String, type: String, status: String, lat: Double, lng: Double, eta: Int = 5) {
+        prefs.edit()
+            .putString(KEY_SIMULATED_SOS_ID, id)
+            .putString(KEY_SIMULATED_SOS_TYPE, type)
+            .putString(KEY_SIMULATED_SOS_STATUS, status)
+            .putFloat(KEY_SIMULATED_SOS_LAT, lat.toFloat())
+            .putFloat(KEY_SIMULATED_SOS_LNG, lng.toFloat())
+            .putInt(KEY_SIMULATED_ETA, eta)
+            .apply()
     }
 
-    /**
-     * Retrieve the last simulated SOS trip ID.
-     */
-    fun getSimulatedSOS(): String? {
-        return prefs.getString(KEY_SIMULATED_SOS, null)
+    fun getSimulatedSOS(): String? = prefs.getString(KEY_SIMULATED_SOS_ID, null)
+    fun getSimulatedSOSType(): String = prefs.getString(KEY_SIMULATED_SOS_TYPE, "medical") ?: "medical"
+    fun getSimulatedSOSStatus(): String = prefs.getString(KEY_SIMULATED_SOS_STATUS, "pending") ?: "pending"
+    fun getSimulatedSOSLat(): Double = prefs.getFloat(KEY_SIMULATED_SOS_LAT, 0f).toDouble()
+    fun getSimulatedSOSLng(): Double = prefs.getFloat(KEY_SIMULATED_SOS_LNG, 0f).toDouble()
+    fun getSimulatedETA(): Int = prefs.getInt(KEY_SIMULATED_ETA, 5)
+
+    fun updateSimulatedMissionStatus(status: String) {
+        prefs.edit().putString(KEY_SIMULATED_SOS_STATUS, status).apply()
     }
 
-    /**
-     * Clear the simulated SOS after it has been "detected".
-     */
     fun clearSimulatedSOS() {
-        prefs.edit().remove(KEY_SIMULATED_SOS).apply()
+        prefs.edit()
+            .remove(KEY_SIMULATED_SOS_ID)
+            .remove(KEY_SIMULATED_SOS_TYPE)
+            .remove(KEY_SIMULATED_SOS_STATUS)
+            .remove(KEY_SIMULATED_SOS_LAT)
+            .remove(KEY_SIMULATED_SOS_LNG)
+            .remove(KEY_SIMULATED_ETA)
+            .apply()
     }
 }

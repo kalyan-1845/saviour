@@ -347,15 +347,19 @@ fun SOSScreen(
                                     sosResponse = response.body()
                                     trackPhone = phoneNumber
                                     isOfflineMode = false
-                                    response.body()?.tripId?.let { sessionManager.saveSimulatedSOS(it) }
+                                    response.body()?.let { 
+                                        sessionManager.saveSimulatedMission(it.tripId, selectedType, it.status, latitude, longitude)
+                                    }
                                 } else {
-                                    sosResponse = SosResponse(success = true, tripId = "OFFLINE_" + System.currentTimeMillis(), status = "pending", message = "Offline Protocol Activated")
-                                    sosResponse?.tripId?.let { sessionManager.saveSimulatedSOS(it) }
+                                    val fallbackId = "OFFLINE_" + System.currentTimeMillis()
+                                    sosResponse = SosResponse(success = true, tripId = fallbackId, status = "pending", message = "Offline Protocol Activated")
+                                    sessionManager.saveSimulatedMission(fallbackId, selectedType, "pending", latitude, longitude)
                                     isOfflineMode = true
                                 }
                             } catch (e: Exception) {
-                                sosResponse = SosResponse(success = true, tripId = "OFFLINE_" + System.currentTimeMillis(), status = "pending", message = "Offline Protocol Activated")
-                                sosResponse?.tripId?.let { sessionManager.saveSimulatedSOS(it) }
+                                val fallbackId = "OFFLINE_" + System.currentTimeMillis()
+                                sosResponse = SosResponse(success = true, tripId = fallbackId, status = "pending", message = "Offline Protocol Activated")
+                                sessionManager.saveSimulatedMission(fallbackId, selectedType, "pending", latitude, longitude)
                                 isOfflineMode = true
                             } finally {
                                 isSending = false

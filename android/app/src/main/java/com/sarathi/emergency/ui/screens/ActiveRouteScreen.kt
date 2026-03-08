@@ -278,6 +278,7 @@ fun ActiveRouteScreen(
                         onClick = {
                             if (tripStatus == "En Route to Patient") {
                                 tripStatus = "Transporting Patient"
+                                sessionManager.updateSimulatedMissionStatus("Transporting Patient")
                                 scope.launch {
                                     api.notifyAuthorities(NotifyRequest("active", sessionManager.getDriverId(), latitude, longitude))
                                 }

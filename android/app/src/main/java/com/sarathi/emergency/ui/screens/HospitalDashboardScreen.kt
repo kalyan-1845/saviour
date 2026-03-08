@@ -111,9 +111,27 @@ fun HospitalDashboardScreen(
         while(true) {
             val simId = sessionManager.getSimulatedSOS()
             if (simId != null) {
-                // UPDATE RELEVANT CASE IF FOUND
-                caseList = caseList.map { 
-                    if (it.id == "EC-001") it.copy(status = "Transporting Patient", eta = 4) else it 
+                val simType = sessionManager.getSimulatedSOSType()
+                val simStatus = sessionManager.getSimulatedSOSStatus()
+                
+                // CHECK IF CASE ALREADY EXISTS
+                val exists = caseList.any { it.id == simId }
+                if (!exists) {
+                    val newCase = IncomingCase(
+                        id = simId,
+                        patientName = "S.O.S ($simType)",
+                        emergencyType = simType,
+                        status = simStatus,
+                        eta = sessionManager.getSimulatedETA(),
+                        distance = 2.4,
+                        isPriority = true
+                    )
+                    caseList = listOf(newCase) + caseList
+                } else {
+                    // Update existing simulation state
+                    caseList = caseList.map { 
+                        if (it.id == simId) it.copy(status = simStatus) else it 
+                    }
                 }
             }
             delay(5000)
