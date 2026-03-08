@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary_blue">#FF4F46E5</color>
+    <color name="primary_purple">#FF7C3AED</color>
+    <color name="emergency_red">#FFDC2626</color>
+    <color name="emergency_orange">#FFEA580C</color>
+    <color name="success_green">#FF10B981</color>
+    <color name="dark_navy">#FF0F172A</color>
+    <color name="dark_blue_gray">#FF1E293B</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="black">#FF000000</color>
+</resources>

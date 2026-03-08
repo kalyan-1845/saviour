@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SARATHI</string>
+    <string name="driver_login">Driver Login</string>
+    <string name="public_sos">Public SOS</string>
+    <string name="emergency_hotline">Emergency Hotline: 112</string>
+</resources>

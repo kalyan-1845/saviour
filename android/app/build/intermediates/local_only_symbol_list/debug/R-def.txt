@@ -1,0 +1,19 @@
+R_DEF: Internal format may change without notice
+local
+color black
+color dark_blue_gray
+color dark_navy
+color emergency_orange
+color emergency_red
+color primary_blue
+color primary_purple
+color success_green
+color white
+drawable ic_launcher_background
+drawable ic_launcher_foreground
+mipmap ic_launcher
+mipmap ic_launcher_round
+string app_name
+string driver_login
+string emergency_hotline
+string public_sos
