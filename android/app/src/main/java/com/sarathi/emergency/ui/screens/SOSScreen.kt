@@ -127,13 +127,33 @@ fun SOSScreen(
         }
     }
 
-    val mapMarkers = remember(sosResponse, latitude, longitude, hasLocation) {
+    var driverLat by remember { mutableDoubleStateOf(17.4310) }
+    var driverLng by remember { mutableDoubleStateOf(78.4070) }
+    var driverEta by remember { mutableIntStateOf(5) }
+
+    val mapMarkers = remember(sosResponse, latitude, longitude, hasLocation, driverLat, driverLng) {
         buildList {
             if (hasLocation) {
                 add(MapMarker(latitude, longitude, "📍 Your Location", "GPS Active", MarkerColor.BLUE))
             }
+            if (sosResponse != null && driverEta > 0) {
+                add(MapMarker(driverLat, driverLng, "🚑 Ambulance", "Emergency Vehicle", MarkerColor.RED))
+            }
             sosResponse?.hospital?.let { h ->
                 add(MapMarker(latitude + 0.008, longitude + 0.005, "🏥 ${h.name}", "Assigned Hospital", MarkerColor.GREEN))
+            }
+        }
+    }
+
+    // SIMULATED LIVE TRACKING FOR USER
+    LaunchedEffect(sosResponse) {
+        if (sosResponse != null) {
+            while(driverEta > 0) {
+                delay(3000)
+                // Move driver closer to patient (latitude 17.4426, longitude 78.5006)
+                driverLat += (latitude - driverLat) * 0.1
+                driverLng += (longitude - driverLng) * 0.1
+                if (driverEta > 1) driverEta -= 1
             }
         }
     }
@@ -358,8 +378,21 @@ fun SOSScreen(
                 }
 
 
-                if (sosError != null) {
-                    Text(sosError!!, color = EmergencyOrange, modifier = Modifier.padding(top = 8.dp))
+                if (sosResponse != null) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                        colors = CardDefaults.cardColors(containerColor = SuccessGreen.copy(alpha = 0.15f))
+                    ) {
+                        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.DirectionsCar, null, tint = SuccessGreen)
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text("AMBULANCE LIVE TRACKING", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                Text("Driver is coming! ETA: $driverEta mins", color = SuccessGreen, fontSize = 14.sp, fontWeight = FontWeight.Black)
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
             } else {
                 // ── SOS SUCCESS STATE ──

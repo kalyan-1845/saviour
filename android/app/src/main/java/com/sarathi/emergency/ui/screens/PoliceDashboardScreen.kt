@@ -61,6 +61,7 @@ data class GreenCorridorAlert(
 fun PoliceDashboardScreen(
     stationName: String,
     stationArea: String,
+    sessionManager: SessionManager,
     onLogout: () -> Unit
 ) {
     val context = LocalContext.current
@@ -91,25 +92,34 @@ fun PoliceDashboardScreen(
     }
 
     // Simulated live alerts with coordinates
-    val alerts = remember {
-        listOf(
-            GreenCorridorAlert("GC-001", "Cardiac", "Jubilee Hills", "Apollo Hospital",
-                "Active", 5, "Critical", "08:15 AM", "Kalyan", "TS-09-AB-1234",
-                fromLat = 17.4310, fromLng = 78.4070, toLat = 17.4426, toLng = 78.4470),
-            GreenCorridorAlert("GC-002", "Trauma", "Gachibowli", "NIMS Hospital",
-                "Active", 8, "High", "08:22 AM", "Raju K", "TS-09-CD-5678",
-                fromLat = 17.4400, fromLng = 78.3481, toLat = 17.3950, toLng = 78.4946),
-            GreenCorridorAlert("GC-003", "Burn", "Madhapur", "Continental Hospital",
-                "En Route", 12, "Critical", "08:10 AM", "Suresh M", "TS-09-EF-9012",
-                fromLat = 17.4485, fromLng = 78.3908, toLat = 17.4550, toLng = 78.3730),
-            GreenCorridorAlert("GC-004", "Stroke", "Kukatpally", "KIMS Hospital",
-                "Completed", 0, "Medium", "07:45 AM", "Venkat R", "TS-09-GH-3456",
-                fromLat = 17.4947, fromLng = 78.3996, toLat = 17.4417, toLng = 78.4743),
-            GreenCorridorAlert("GC-005", "Accident", "Banjara Hills", "Care Hospital",
-                "Active", 3, "Critical", "08:28 AM", "Pavan S", "TS-09-IJ-7890",
-                fromLat = 17.4150, fromLng = 78.4467, toLat = 17.4300, toLng = 78.4600)
+    var alertList by remember {
+        mutableStateOf(
+            listOf(
+                GreenCorridorAlert("GC-001", "Cardiac", "Jubilee Hills", "Apollo Hospital",
+                    "Active", 5, "Critical", "08:15 AM", "Kalyan", "TS-09-AB-1234",
+                    fromLat = 17.4310, fromLng = 78.4070, toLat = 17.4426, toLng = 78.4470),
+                GreenCorridorAlert("GC-002", "Trauma", "Gachibowli", "NIMS Hospital",
+                    "Active", 8, "High", "08:22 AM", "Raju K", "TS-09-CD-5678",
+                    fromLat = 17.4400, fromLng = 78.3481, toLat = 17.3950, toLng = 78.4946)
+            )
         )
     }
+
+    // POLL FOR LIVE DRIVER UPDATES (SIMULATION)
+    LaunchedEffect(Unit) {
+        while(true) {
+            val simId = sessionManager.getSimulatedSOS()
+            if (simId != null) {
+                // UPDATE RELEVANT GC STATUS IF FOUND
+                alertList = alertList.map { 
+                    if (it.id == "GC-001") it.copy(status = "Transporting", eta = 4) else it 
+                }
+            }
+            delay(5000)
+        }
+    }
+
+    val alerts = alertList
 
     val activeCount = alerts.count { it.status != "Completed" }
     val criticalCount = alerts.count { it.priority == "Critical" }

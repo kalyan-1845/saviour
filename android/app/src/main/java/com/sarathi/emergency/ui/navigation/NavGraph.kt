@@ -172,8 +172,9 @@ fun NavGraph(api: SarathiApi, sessionManager: SessionManager) {
 
         composable(Routes.POLICE_DASHBOARD) {
             PoliceDashboardScreen(
-                stationName = selectedStationName,
-                stationArea = selectedStationArea,
+                stationName = selectedStationName.ifEmpty { "Hyderabad Central" },
+                stationArea = selectedStationArea.ifEmpty { "Abids" },
+                sessionManager = sessionManager,
                 onLogout = {
                     navController.navigate(Routes.SPLASH) {
                         popUpTo(0) { inclusive = true }
@@ -202,8 +203,10 @@ fun NavGraph(api: SarathiApi, sessionManager: SessionManager) {
 
         composable(Routes.HOSPITAL_DASHBOARD) {
             HospitalDashboardScreen(
-                hospitalName = selectedHospName,
-                hospitalArea = selectedHospArea,
+                hospitalName = selectedHospName.ifEmpty { "Apollo" },
+                hospitalArea = selectedHospArea.ifEmpty { "Jubilee Hills" },
+                sessionManager = sessionManager,
+                api = api,
                 onLogout = {
                     navController.navigate(Routes.SPLASH) {
                         popUpTo(0) { inclusive = true }
