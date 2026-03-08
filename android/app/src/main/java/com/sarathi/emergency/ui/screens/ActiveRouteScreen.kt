@@ -61,13 +61,17 @@ fun ActiveRouteScreen(
     var latitude by remember { mutableDoubleStateOf(17.4426) }
     var longitude by remember { mutableDoubleStateOf(78.5006) }
     var hasLocation by remember { mutableStateOf(false) }
-    var notifyResult by remember { mutableStateOf<NotifyResponse?>(null) }
     var notifyLoading by remember { mutableStateOf(false) }
     var voiceEnabled by remember { mutableStateOf(true) }
-
-    // Simulated destination (hospital)
-    val destLat = remember { 17.4550 }
-    val destLng = remember { 78.4700 }
+    var showRerouteDialog by remember { mutableStateOf(false) }
+    var tripStatus by remember { mutableStateOf("En Route to Patient") }
+    var etaMinutes by remember { mutableIntStateOf(7) }
+    var trafficLevel by remember { mutableStateOf("Normal") }
+    
+    // Track destination
+    var currentDestLat by remember { mutableDoubleStateOf(17.4550) }
+    var currentDestLng by remember { mutableDoubleStateOf(78.4700) }
+    var currentHospitalName by remember { mutableStateOf("Default Emergency Hospital") }
 
     val locationPermission = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
 
@@ -90,22 +94,22 @@ fun ActiveRouteScreen(
     }
 
     // Map markers
-    val mapMarkers = remember(latitude, longitude, hasLocation) {
+    val mapMarkers = remember(latitude, longitude, hasLocation, currentDestLat, currentDestLng) {
         buildList {
             if (hasLocation) {
                 add(MapMarker(latitude, longitude, "🚑 Your Location", "Ambulance", MarkerColor.BLUE))
             }
-            add(MapMarker(destLat, destLng, "🏥 Destination Hospital", "Emergency destination", MarkerColor.GREEN))
+            add(MapMarker(currentDestLat, currentDestLng, "🏥 $currentHospitalName", "Emergency destination", MarkerColor.GREEN))
         }
     }
 
     // Route from current to destination
-    val mapRoutes = remember(latitude, longitude) {
+    val mapRoutes = remember(latitude, longitude, currentDestLat, currentDestLng) {
         listOf(
             MapRoute(
                 points = listOf(
                     latitude to longitude,
-                    destLat to destLng
+                    currentDestLat to currentDestLng
                 ),
                 color = android.graphics.Color.parseColor("#4F46E5"),
                 width = 6f
@@ -135,15 +139,23 @@ fun ActiveRouteScreen(
                     Spacer(modifier = Modifier.width(4.dp))
                     Column {
                         Text("Active Navigation", color = TextWhite, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                        Text("Emergency Route Active", color = SuccessGreen, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Text(tripStatus, color = SuccessGreen, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
-                IconButton(onClick = { voiceEnabled = !voiceEnabled }) {
-                    Icon(
-                        imageVector = if (voiceEnabled) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
-                        contentDescription = "Voice",
-                        tint = if (voiceEnabled) SuccessGreen else TextWhite70
-                    )
+                Row {
+                    IconButton(onClick = { 
+                        // SIMULATE SMS SEND
+                        println("SARATHI SMS: Your ambulance is at $latitude,$longitude. ETA: $etaMinutes mins. Priority Green Corridor Active.")
+                    }) {
+                        Icon(Icons.Default.Textsms, "SMS Update", tint = PrimaryBlue)
+                    }
+                    IconButton(onClick = { voiceEnabled = !voiceEnabled }) {
+                        Icon(
+                            imageVector = if (voiceEnabled) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
+                            contentDescription = "Voice",
+                            tint = if (voiceEnabled) SuccessGreen else TextWhite70
+                        )
+                    }
                 }
             }
 
@@ -173,14 +185,28 @@ fun ActiveRouteScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {
                             Text("ETA", color = TextWhite70, fontSize = 11.sp)
-                            Text("7 mins", color = TextWhite, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            Text("$etaMinutes mins", color = if (etaMinutes > 15) EmergencyOrange else TextWhite, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                         }
                         Spacer(modifier = Modifier.width(16.dp))
-                        Icon(Icons.Default.Route, null, tint = PrimaryBlue, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.Traffic, null, tint = if (trafficLevel == "Heavy") EmergencyRed else SuccessGreen, modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {
-                            Text("Distance", color = TextWhite70, fontSize = 11.sp)
-                            Text("3.2 km", color = TextWhite, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            Text("Traffic", color = TextWhite70, fontSize = 11.sp)
+                            Text(trafficLevel, color = if (trafficLevel == "Heavy") EmergencyRed else SuccessGreen, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        }
+                    }
+                }
+
+                // TRAFFIC ALERT - DYNAMIC REROUTE PROMPT
+                if (trafficLevel == "Heavy") {
+                    Card(
+                        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 80.dp).padding(horizontal = 20.dp),
+                        colors = CardDefaults.cardColors(containerColor = EmergencyRed.copy(alpha = 0.9f))
+                    ) {
+                        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Warning, null, tint = Color.White)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("HEAVY TRAFFIC DETECTED. SUGGEST REROUTE?", color = Color.White, fontWeight = FontWeight.Black, fontSize = 12.sp)
                         }
                     }
                 }
@@ -244,36 +270,24 @@ fun ActiveRouteScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        // Notify — tries API, falls back to offline mock
-                        GlowButton(
-                            text = if (notifyLoading) "..." else "Notify",
-                            onClick = {
-                                notifyLoading = true
+                    // Notify — tries API, falls back to offline mock
+                    GlowButton(
+                        text = if (tripStatus == "En Route to Patient") "MARK PICKED UP" else "SEND LIVE ETA SMS",
+                        onClick = {
+                            if (tripStatus == "En Route to Patient") {
+                                tripStatus = "Transporting Patient"
                                 scope.launch {
-                                    try {
-                                        val response = api.notifyAuthorities(
-                                            NotifyRequest(
-                                                tripId = "active",
-                                                driverId = sessionManager.getDriverId(),
-                                                latitude = latitude,
-                                                longitude = longitude
-                                            )
-                                        )
-                                        notifyResult = if (response.isSuccessful) response.body()
-                                        else offlineMockNotify()
-                                    } catch (_: Exception) {
-                                        // OFFLINE fallback
-                                        notifyResult = offlineMockNotify()
-                                    } finally {
-                                        notifyLoading = false
-                                    }
+                                    api.notifyAuthorities(NotifyRequest("active", sessionManager.getDriverId(), latitude, longitude))
                                 }
-                            },
-                            isLoading = notifyLoading,
-                            variant = GlowVariant.PURPLE,
-                            modifier = Modifier.weight(1f),
-                            icon = { Icon(Icons.Default.NotificationsActive, null, tint = Color.White, modifier = Modifier.size(18.dp)) }
-                        )
+                            } else {
+                                // Simulate family SMS
+                                println("SARATHI: SMS Sent to patient group. Status: $tripStatus, ETA 🏥: $etaMinutes mins")
+                            }
+                        },
+                        variant = GlowVariant.PURPLE,
+                        modifier = Modifier.weight(1f),
+                        icon = { Icon(if (tripStatus == "En Route to Patient") Icons.Default.PersonSearch else Icons.Default.ShareLocation, null, tint = Color.White, modifier = Modifier.size(18.dp)) }
+                    )
 
                         // Complete
                         GlowButton(
@@ -294,17 +308,63 @@ fun ActiveRouteScreen(
                     GlowButton(
                         text = "🚀 NAVIGATE TO PATIENT (HIGH PRIORITY)",
                         onClick = {
-                            val uri = Uri.parse("google.navigation:q=$destLat,$destLng&mode=d")
+                            val uri = Uri.parse("google.navigation:q=$currentDestLat,$currentDestLng&mode=d")
                             val intent = Intent(Intent.ACTION_VIEW, uri)
                             intent.setPackage("com.google.android.apps.maps")
                             try { context.startActivity(intent) } catch (_: Exception) {
-                                val browserUri = Uri.parse("https://maps.google.com/maps?daddr=$destLat,$destLng")
+                                val browserUri = Uri.parse("https://maps.google.com/maps?daddr=$currentDestLat,$currentDestLng")
                                 context.startActivity(Intent(Intent.ACTION_VIEW, browserUri))
                             }
                         },
                         variant = GlowVariant.DANGER,
                         modifier = Modifier.fillMaxWidth()
                     )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // REROUTE BUTTON
+                    GlowButton(
+                        text = "🔀 RE-ROUTE EMERGENCY HOSPITAL",
+                        onClick = { showRerouteDialog = true },
+                        variant = GlowVariant.PRIMARY,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    if (showRerouteDialog) {
+                        AlertDialog(
+                            onDismissRequest = { showRerouteDialog = false },
+                            containerColor = DarkBlueGray,
+                            title = { Text("Heavy Traffic: Reroute Suggested", color = Color.White) },
+                            text = { 
+                                Column {
+                                    Text("Suggested fastest alternatives based on your current GPS and traffic:", color = TextWhite70, fontSize = 12.sp)
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    RerouteOption("Apollo Hospital (Jubilee Hills)", "5 mins", "Clear Flow") {
+                                        currentDestLat = 17.4310
+                                        currentDestLng = 78.4070
+                                        currentHospitalName = "Apollo Hospital"
+                                        etaMinutes = 5
+                                        trafficLevel = "Normal"
+                                        showRerouteDialog = false
+                                    }
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    RerouteOption("NIMS Emergency Unit", "3 mins", "Clear Flow") {
+                                        currentDestLat = 17.4426
+                                        currentDestLng = 78.5006
+                                        currentHospitalName = "NIMS"
+                                        etaMinutes = 3
+                                        trafficLevel = "Normal"
+                                        showRerouteDialog = false
+                                    }
+                                }
+                            },
+                            confirmButton = {
+                                TextButton(onClick = { showRerouteDialog = false }) {
+                                    Text("CANCEL", color = TextWhite70)
+                                }
+                            }
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(10.dp))
 
@@ -325,6 +385,25 @@ fun ActiveRouteScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun RerouteOption(name: String, time: String, flow: String, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable { onClick() },
+        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.LocalHospital, null, tint = SuccessGreen, modifier = Modifier.size(20.dp))
+            Spacer(modifier = Modifier.width(10.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                Text("ETA $time | $flow", color = SuccessGreen, fontSize = 11.sp)
+            }
+            Icon(Icons.Default.ChevronRight, null, tint = TextWhite50)
         }
     }
 }

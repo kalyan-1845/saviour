@@ -59,6 +59,8 @@ data class IncomingCase(
 fun HospitalDashboardScreen(
     hospitalName: String,
     hospitalArea: String,
+    sessionManager: SessionManager,
+    api: SarathiApi,
     onLogout: () -> Unit
 ) {
     val context = LocalContext.current
@@ -88,28 +90,34 @@ fun HospitalDashboardScreen(
         SimpleDateFormat("hh:mm a, dd MMM yyyy", Locale.getDefault()).format(Date())
     }
 
-    val cases = remember {
-        listOf(
-            IncomingCase("EC-001", "+91 98765 XXXXX", "Cardiac Arrest", 5,
-                "Kalyan", "TS-09-AB-1234", "Incoming", "Critical", "08:15 AM",
-                "Jubilee Hills", "B+", ambulanceLat = 17.4310, ambulanceLng = 78.4070),
-            IncomingCase("EC-002", "+91 87654 XXXXX", "Road Accident", 8,
-                "Raju K", "TS-09-CD-5678", "Incoming", "High", "08:22 AM",
-                "Gachibowli", "O+", ambulanceLat = 17.4400, ambulanceLng = 78.3481),
-            IncomingCase("EC-003", "+91 76543 XXXXX", "Burn Injury", 12,
-                "Suresh M", "TS-09-EF-9012", "En Route", "Critical", "08:10 AM",
-                "Madhapur", ambulanceLat = 17.4485, ambulanceLng = 78.3908),
-            IncomingCase("EC-004", "+91 65432 XXXXX", "Brain Stroke", 3,
-                "Venkat R", "TS-09-GH-3456", "Arrived", "High", "07:55 AM",
-                "Kukatpally", "A+", ambulanceLat = 17.4417, ambulanceLng = 78.4743),
-            IncomingCase("EC-005", "+91 54321 XXXXX", "Pediatric Emergency", 15,
-                "Pavan S", "TS-09-IJ-7890", "Incoming", "Medium", "08:28 AM",
-                "Miyapur", ambulanceLat = 17.4950, ambulanceLng = 78.3700),
-            IncomingCase("EC-006", "+91 43210 XXXXX", "Fracture", 6,
-                "Mohan D", "TS-09-KL-2345", "En Route", "Medium", "08:30 AM",
-                "Banjara Hills", "AB+", ambulanceLat = 17.4150, ambulanceLng = 78.4467)
+    var caseList by remember {
+        mutableStateOf(
+            listOf(
+                IncomingCase("EC-001", "+91 98765 XXXXX", "Cardiac Arrest", 5,
+                    "Kalyan", "TS-09-AB-1234", "Incoming", "Critical", "08:15 AM",
+                    "Jubilee Hills", "B+", ambulanceLat = 17.4310, ambulanceLng = 78.4070),
+                IncomingCase("EC-002", "+91 87654 XXXXX", "Road Accident", 8,
+                    "Raju K", "TS-09-CD-5678", "Incoming", "High", "08:22 AM",
+                    "Gachibowli", "O+", ambulanceLat = 17.4400, ambulanceLng = 78.3481)
+            )
         )
     }
+
+    // POLL FOR LIVE DRIVER UPDATES
+    LaunchedEffect(Unit) {
+        while(true) {
+            val simId = sessionManager.getSimulatedSOS()
+            if (simId != null) {
+                // UPDATE RELEVANT CASE IF FOUND
+                caseList = caseList.map { 
+                    if (it.id == "EC-001") it.copy(status = "Transporting Patient", eta = 4) else it 
+                }
+            }
+            delay(5000)
+        }
+    }
+
+    val cases = caseList
 
     val incomingCount = cases.count { it.status == "Incoming" }
     val enRouteCount = cases.count { it.status == "En Route" }
