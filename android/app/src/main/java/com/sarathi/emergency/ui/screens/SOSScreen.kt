@@ -346,7 +346,7 @@ fun SOSScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             // ── TRACKING SECTION ───────────────
-            HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
+            Divider(color = Color.White.copy(alpha = 0.1f))
             Spacer(modifier = Modifier.height(20.dp))
             Text("Track Existing SOS", color = TextWhite, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             Spacer(modifier = Modifier.height(8.dp))
