@@ -1,6 +1,10 @@
 package com.sarathi.emergency
 
 import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.os.Build
 import com.sarathi.emergency.data.SessionManager
 import com.sarathi.emergency.data.api.SarathiApi
 import okhttp3.OkHttpClient
@@ -41,5 +45,19 @@ class SarathiApp : Application() {
             .build()
 
         api = retrofit.create(SarathiApi::class.java)
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                "emergency_channel",
+                "Emergency Updates",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Live tracking and emergency alerts"
+            }
+            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.createNotificationChannel(channel)
+        }
     }
 }

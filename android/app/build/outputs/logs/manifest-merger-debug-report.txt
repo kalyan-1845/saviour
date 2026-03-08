@@ -1,9 +1,9 @@
 -- Merging decision tree log ---
 manifest
-ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:2:1-42:12
-INJECTED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:2:1-42:12
-INJECTED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:2:1-42:12
-INJECTED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:2:1-42:12
+ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:2:1-52:12
+INJECTED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:2:1-52:12
+INJECTED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:2:1-52:12
+INJECTED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:2:1-52:12
 MERGED from [com.google.maps.android:maps-compose:4.3.3] C:\Users\prsnl\.gradle\caches\transforms-3\0b3eb9059be6514b8e7b86a5b7f040a3\transformed\maps-compose-4.3.3\AndroidManifest.xml:17:1-22:12
 MERGED from [com.google.maps.android:maps-ktx:5.0.0] C:\Users\prsnl\.gradle\caches\transforms-3\697e583c28bf8bf418ca96f087e73ccb\transformed\maps-ktx-5.0.0\AndroidManifest.xml:18:1-23:12
 MERGED from [com.google.android.gms:play-services-maps:18.2.0] C:\Users\prsnl\.gradle\caches\transforms-3\17cf5c2d843307f9415c63f8455dd50a\transformed\play-services-maps-18.2.0\AndroidManifest.xml:17:1-44:12
@@ -125,9 +125,21 @@ uses-permission#android.permission.VIBRATE
 ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:12:5-66
 	android:name
 		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:12:22-63
+uses-permission#android.permission.FOREGROUND_SERVICE
+ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:13:5-77
+	android:name
+		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:13:22-74
+uses-permission#android.permission.FOREGROUND_SERVICE_LOCATION
+ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:14:5-86
+	android:name
+		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:14:22-83
+uses-permission#android.permission.POST_NOTIFICATIONS
+ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:15:5-77
+	android:name
+		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:15:22-74
 application
-ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:14:5-40:19
-INJECTED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:14:5-40:19
+ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:17:5-50:19
+INJECTED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:17:5-50:19
 MERGED from [com.google.android.gms:play-services-maps:18.2.0] C:\Users\prsnl\.gradle\caches\transforms-3\17cf5c2d843307f9415c63f8455dd50a\transformed\play-services-maps-18.2.0\AndroidManifest.xml:36:5-42:19
 MERGED from [com.google.android.gms:play-services-maps:18.2.0] C:\Users\prsnl\.gradle\caches\transforms-3\17cf5c2d843307f9415c63f8455dd50a\transformed\play-services-maps-18.2.0\AndroidManifest.xml:36:5-42:19
 MERGED from [com.google.android.gms:play-services-location:21.1.0] C:\Users\prsnl\.gradle\caches\transforms-3\5da63a61425b7a208ba407cf2a82dc85\transformed\play-services-location-21.1.0\AndroidManifest.xml:7:5-20
@@ -159,49 +171,59 @@ MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\prsnl\.gradle\cach
 	android:appComponentFactory
 		ADDED from [androidx.core:core:1.12.0] C:\Users\prsnl\.gradle\caches\transforms-3\440a64c1659b3784956be1ef27019da1\transformed\core-1.12.0\AndroidManifest.xml:28:18-86
 	android:supportsRtl
-		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:20:9-35
+		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:23:9-35
 	android:label
-		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:18:9-32
+		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:21:9-32
 	android:roundIcon
-		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:19:9-54
+		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:22:9-54
 	tools:targetApi
-		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:23:9-29
+		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:26:9-29
 	android:icon
-		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:17:9-43
+		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:20:9-43
 	android:allowBackup
-		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:16:9-35
+		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:19:9-35
 	android:theme
-		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:21:9-66
+		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:24:9-66
 	android:usesCleartextTraffic
-		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:22:9-44
+		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:25:9-44
 	android:name
-		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:15:9-35
-meta-data#com.google.android.geo.API_KEY
-ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:26:9-28:56
-	android:value
-		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:28:13-53
-	android:name
-		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:27:13-58
-activity#com.sarathi.emergency.MainActivity
-ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:30:9-39:20
-	android:windowSoftInputMode
-		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:33:13-55
+		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:18:9-35
+service#com.sarathi.emergency.services.BackgroundLocationService
+ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:29:9-33:40
+	android:enabled
+		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:32:13-35
 	android:exported
-		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:32:13-36
+		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:33:13-37
+	android:foregroundServiceType
+		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:31:13-53
+	android:name
+		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:30:13-63
+meta-data#com.google.android.geo.API_KEY
+ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:36:9-38:56
+	android:value
+		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:38:13-53
+	android:name
+		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:37:13-58
+activity#com.sarathi.emergency.MainActivity
+ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:40:9-49:20
+	android:windowSoftInputMode
+		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:43:13-55
+	android:exported
+		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:42:13-36
 	android:theme
-		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:34:13-70
+		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:44:13-70
 	android:name
-		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:31:13-41
+		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:41:13-41
 intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
-ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:35:13-38:29
+ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:45:13-48:29
 action#android.intent.action.MAIN
-ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:36:17-69
+ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:46:17-69
 	android:name
-		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:36:25-66
+		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:46:25-66
 category#android.intent.category.LAUNCHER
-ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:37:17-77
+ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:47:17-77
 	android:name
-		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:37:27-74
+		ADDED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml:47:27-74
 uses-sdk
 INJECTED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml reason: use-sdk injection requested
 INJECTED from C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\AndroidManifest.xml

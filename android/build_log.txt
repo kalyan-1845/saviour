@@ -1,0 +1,97 @@
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:checkKotlinGradlePluginConfigurationErrors
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:mergeDebugShaders UP-TO-DATE
+> Task :app:compileDebugShaders NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets UP-TO-DATE
+> Task :app:compressDebugAssets UP-TO-DATE
+> Task :app:checkDebugDuplicateClasses UP-TO-DATE
+> Task :app:desugarDebugFileDependencies UP-TO-DATE
+> Task :app:mergeExtDexDebug UP-TO-DATE
+> Task :app:mergeLibDexDebug UP-TO-DATE
+> Task :app:mergeDebugJniLibFolders UP-TO-DATE
+> Task :app:mergeDebugNativeLibs NO-SOURCE
+> Task :app:stripDebugDebugSymbols NO-SOURCE
+> Task :app:validateSigningDebug UP-TO-DATE
+> Task :app:writeDebugAppMetadata UP-TO-DATE
+> Task :app:writeDebugSigningConfigVersions UP-TO-DATE
+
+> Task :app:compileDebugKotlin
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/SarathiApp.kt:22:9 Unresolved reference: createNotificationChannel
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:5:24 Conflicting import, imported name 'Intent' is ambiguous
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:41:24 Conflicting import, imported name 'Intent' is ambiguous
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:58:37 Unresolved reference: LocationHelper
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:80:28 Unresolved reference: getLastLocation
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:80:46 Cannot infer a type for this parameter. Please specify it explicitly.
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:88:28 Unresolved reference: requestLocationUpdates
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:88:53 Cannot infer a type for this parameter. Please specify it explicitly.
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:246:25 Unresolved reference: notifyResult
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:253:33 Unresolved reference: notifyResult
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:254:37 @Composable invocations can only happen from the context of a @Composable function
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:255:37 @Composable invocations can only happen from the context of a @Composable function
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:255:48 Unresolved reference: it
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:255:60 Unresolved reference: it
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:257:33 Unresolved reference: notifyResult
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:257:61 Cannot infer a type for this parameter. Please specify it explicitly.
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:258:48 Overload resolution ambiguity: 
+public inline fun <T> Iterable<TypeVariable(T)>.forEach(action: (TypeVariable(T)) -> Unit): Unit defined in kotlin.collections
+public inline fun <K, V> Map<out TypeVariable(K), TypeVariable(V)>.forEach(action: (Map.Entry<TypeVariable(K), TypeVariable(V)>) -> Unit): Unit defined in kotlin.collections
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:258:58 Cannot infer a type for this parameter. Please specify it explicitly.
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:259:41 @Composable invocations can only happen from the context of a @Composable function
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:260:41 @Composable invocations can only happen from the context of a @Composable function
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:395:44 Unresolved reference: clickable
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/HospitalDashboardScreen.kt:62:21 Unresolved reference: SessionManager
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/HospitalDashboardScreen.kt:63:10 Unresolved reference: SarathiApi
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/HospitalDashboardScreen.kt:116:13 Unresolved reference: delay
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/PoliceDashboardScreen.kt:64:21 Unresolved reference: SessionManager
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/PoliceDashboardScreen.kt:118:13 Unresolved reference: delay
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/SOSScreen.kt:259:17 Unresolved reference: LazyRow
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/SOSScreen.kt:260:21 Unresolved reference: items
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/SOSScreen.kt:260:45 Cannot infer a type for this parameter. Please specify it explicitly.
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/SOSScreen.kt:262:25 @Composable invocations can only happen from the context of a @Composable function
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/SOSScreen.kt:262:25 This material API is experimental and is likely to change or to be removed in the future.
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/SOSScreen.kt:265:51 @Composable invocations can only happen from the context of a @Composable function
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/SOSScreen.kt:268:54 Unresolved reference: BorderStroke
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/SOSScreen.kt:275:33 Overload resolution ambiguity: 
+public fun Text(text: AnnotatedString, modifier: Modifier = ..., color: Color = ..., fontSize: TextUnit = ..., fontStyle: FontStyle? = ..., fontWeight: FontWeight? = ..., fontFamily: FontFamily? = ..., letterSpacing: TextUnit = ..., textDecoration: TextDecoration? = ..., textAlign: TextAlign? = ..., lineHeight: TextUnit = ..., overflow: TextOverflow = ..., softWrap: Boolean = ..., maxLines: Int = ..., minLines: Int = ..., inlineContent: Map<String, InlineTextContent> = ..., onTextLayout: (TextLayoutResult) -> Unit = ..., style: TextStyle = ...): Unit defined in androidx.compose.material3
+public fun Text(text: String, modifier: Modifier = ..., color: Color = ..., fontSize: TextUnit = ..., fontStyle: FontStyle? = ..., fontWeight: FontWeight? = ..., fontFamily: FontFamily? = ..., letterSpacing: TextUnit = ..., textDecoration: TextDecoration? = ..., textAlign: TextAlign? = ..., lineHeight: TextUnit = ..., overflow: TextOverflow = ..., softWrap: Boolean = ..., maxLines: Int = ..., minLines: Int = ..., onTextLayout: (TextLayoutResult) -> Unit = ..., style: TextStyle = ...): Unit defined in androidx.compose.material3
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/SOSScreen.kt:277:33 Overload resolution ambiguity: 
+public fun Text(text: AnnotatedString, modifier: Modifier = ..., color: Color = ..., fontSize: TextUnit = ..., fontStyle: FontStyle? = ..., fontWeight: FontWeight? = ..., fontFamily: FontFamily? = ..., letterSpacing: TextUnit = ..., textDecoration: TextDecoration? = ..., textAlign: TextAlign? = ..., lineHeight: TextUnit = ..., overflow: TextOverflow = ..., softWrap: Boolean = ..., maxLines: Int = ..., minLines: Int = ..., inlineContent: Map<String, InlineTextContent> = ..., onTextLayout: (TextLayoutResult) -> Unit = ..., style: TextStyle = ...): Unit defined in androidx.compose.material3
+public fun Text(text: String, modifier: Modifier = ..., color: Color = ..., fontSize: TextUnit = ..., fontStyle: FontStyle? = ..., fontWeight: FontWeight? = ..., fontFamily: FontFamily? = ..., letterSpacing: TextUnit = ..., textDecoration: TextDecoration? = ..., textAlign: TextAlign? = ..., lineHeight: TextUnit = ..., overflow: TextOverflow = ..., softWrap: Boolean = ..., maxLines: Int = ..., minLines: Int = ..., onTextLayout: (TextLayoutResult) -> Unit = ..., style: TextStyle = ...): Unit defined in androidx.compose.material3
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/SOSScreen.kt:373:30 Unresolved reference: BorderStroke
+e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/SOSScreen.kt:433:38 Unresolved reference: BorderStroke
+
+> Task :app:compileDebugKotlin FAILED
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileDebugKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 12s
+27 actionable tasks: 2 executed, 25 up-to-date
