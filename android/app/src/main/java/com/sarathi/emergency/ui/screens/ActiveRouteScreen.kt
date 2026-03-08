@@ -146,8 +146,11 @@ fun ActiveRouteScreen(
                 }
                 Row {
                     IconButton(onClick = { 
-                        // SIMULATE SMS SEND
-                        println("SARATHI SMS: Your ambulance is at $latitude,$longitude. ETA: $etaMinutes mins. Priority Green Corridor Active.")
+                        val smsIntent = Intent(Intent.ACTION_SENDTO).apply {
+                            data = Uri.parse("smsto:") // Opens default SMS app
+                            putExtra("sms_body", "🚨 SARATHI EMERGENCY UPDATE: The ambulance is at $latitude,$longitude. ETA to Hospital: $etaMinutes mins. Priority Green Corridor Active.")
+                        }
+                        try { context.startActivity(smsIntent) } catch(_: Exception) {}
                     }) {
                         Icon(Icons.Default.Textsms, "SMS Update", tint = PrimaryBlue)
                     }
