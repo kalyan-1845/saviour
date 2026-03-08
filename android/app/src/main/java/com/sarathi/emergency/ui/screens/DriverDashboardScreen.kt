@@ -1,6 +1,8 @@
 package com.sarathi.emergency.ui.screens
 
 import android.Manifest
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -26,6 +28,7 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.sarathi.emergency.data.SessionManager
 import com.sarathi.emergency.data.api.SarathiApi
+import com.sarathi.emergency.data.models.AssignedTrip
 import com.sarathi.emergency.data.models.EmergencySelectRequest
 import com.sarathi.emergency.ui.components.EmergencyCard
 import com.sarathi.emergency.ui.components.GlowButton
@@ -35,16 +38,8 @@ import com.sarathi.emergency.ui.components.MarkerColor
 import com.sarathi.emergency.ui.components.OfflineMapView
 import com.sarathi.emergency.ui.theme.*
 import com.sarathi.emergency.util.LocationHelper
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-
-data class EmergencyType(
-    val id: String,
-    val name: String,
-    val icon: String,
-    val description: String,
-    val apiType: String,
-    val protocols: List<String>
-)
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -63,14 +58,21 @@ fun DriverDashboardScreen(
     var selectedEmergency by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-    var latitude by remember { mutableDoubleStateOf(0.0) }
-    var longitude by remember { mutableDoubleStateOf(0.0) }
+    var latitude by remember { mutableDoubleStateOf(17.4426) }
+    var longitude by remember { mutableDoubleStateOf(78.5006) }
     var hasLocation by remember { mutableStateOf(false) }
+    var locationAttempted by remember { mutableStateOf(false) }
+
+    // Active trip detection
+    var activeTrip by remember { mutableStateOf<AssignedTrip?>(null) }
+    var isCheckingTrip by remember { mutableStateOf(false) }
 
     val locationPermission = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
 
+    // Setup GPS
     LaunchedEffect(locationPermission.status.isGranted) {
         if (locationPermission.status.isGranted) {
+            locationAttempted = true
             locationHelper.getLastLocation { loc ->
                 if (loc != null) {
                     latitude = loc.latitude
@@ -83,8 +85,39 @@ fun DriverDashboardScreen(
                 longitude = loc.longitude
                 hasLocation = true
             }
-        } else {
-            locationPermission.launchPermissionRequest()
+        }
+    }
+
+    // Auto-poll for assigned SOS trips (Requirement: "automatically detects and track sos")
+    LaunchedEffect(driver?._id) {
+        val driverId = driver?._id ?: return@LaunchedEffect
+        while (true) {
+            try {
+                isCheckingTrip = true
+                val response = api.getAssignedTrip(driverId)
+                if (response.isSuccessful && response.body()?.success == true && response.body()?.trip != null) {
+                    activeTrip = response.body()?.trip
+                } else {
+                    // Check for SIMULATED SOS on the same device (offline testing)
+                    val simulatedId = sessionManager.getSimulatedSOS()
+                    if (simulatedId != null) {
+                        activeTrip = AssignedTrip(
+                            id = simulatedId,
+                            status = "assigned",
+                            emergencyType = "medical",
+                            phone = "9988776655",
+                            pickupLocation = com.sarathi.emergency.data.models.TripLocation(latitude + 0.002, longitude + 0.003)
+                        )
+                    } else {
+                        activeTrip = null
+                    }
+                }
+            } catch (_: Exception) {
+                // Ignore API failures in background poll
+            } finally {
+                isCheckingTrip = false
+            }
+            delay(10000) // Poll every 10 seconds
         }
     }
 
@@ -105,15 +138,20 @@ fun DriverDashboardScreen(
         )
     }
 
-    // Map markers — show nearby simulated emergency hotspots
-    val mapMarkers = remember(latitude, longitude, hasLocation) {
+    // Map markers
+    val mapMarkers = remember(latitude, longitude, hasLocation, activeTrip) {
         buildList {
             if (hasLocation) {
-                add(MapMarker(latitude, longitude, "🚑 You (Driver)", "Your current location", MarkerColor.BLUE))
-                // Simulated nearby hospitals
-                add(MapMarker(latitude + 0.006, longitude + 0.004, "🏥 Apollo Hospital", "2.1 km away", MarkerColor.GREEN))
-                add(MapMarker(latitude - 0.004, longitude + 0.007, "🏥 NIMS Hospital", "3.5 km away", MarkerColor.GREEN))
-                add(MapMarker(latitude + 0.008, longitude - 0.003, "🏥 KIMS Hospital", "4.2 km away", MarkerColor.GREEN))
+                add(MapMarker(latitude, longitude, "🚑 My Ambulance", "Ready for assistance", MarkerColor.BLUE))
+                
+                // If there's an active SOS trip, show pickup marker
+                activeTrip?.pickupLocation?.let { loc ->
+                    add(MapMarker(loc.latitude, loc.longitude, "📍 SOS PICKUP", "Active Emergency Patient", MarkerColor.RED))
+                }
+
+                // Nearby hospitals
+                add(MapMarker(latitude + 0.012, longitude + 0.008, "🏥 Sunshine Hospital", "24/7 ER", MarkerColor.GREEN))
+                add(MapMarker(latitude - 0.008, longitude + 0.015, "🏥 KIMS Gachibowli", "Trauma Care", MarkerColor.GREEN))
             }
         }
     }
@@ -121,11 +159,7 @@ fun DriverDashboardScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(DarkNavy, Color(0xFF1E2A4A), DarkPurple)
-                )
-            )
+            .background(Brush.verticalGradient(listOf(DarkNavy, Color(0xFF131A2F), Color(0xFF1E1338))))
     ) {
         Column(
             modifier = Modifier
@@ -135,7 +169,7 @@ fun DriverDashboardScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Header with logout
+            // ── Header ──
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -143,92 +177,116 @@ fun DriverDashboardScreen(
             ) {
                 Column {
                     Text(
-                        text = "Welcome, ${driver?.fullName ?: "Driver"}",
-                        color = TextWhite,
-                        fontSize = 22.sp,
+                        text = "Hello, ${driver?.fullName ?: "Driver"}",
+                        color = Color.White,
+                        fontSize = 24.sp,
                         fontWeight = FontWeight.Black
                     )
                     Text(
-                        text = "SARATHI Emergency Dashboard",
+                        text = "Driver Monitoring Hub",
                         color = TextBlue300,
                         fontSize = 13.sp
                     )
                 }
-                IconButton(onClick = {
-                    sessionManager.logout()
-                    onLogout()
-                }) {
-                    Icon(Icons.Default.Logout, "Logout", tint = TextRed400)
+                IconButton(onClick = onLogout) {
+                    Icon(Icons.Default.PowerSettingsNew, "Logout", tint = EmergencyRed)
                 }
             }
 
-            // Status indicator
             Spacer(modifier = Modifier.height(16.dp))
+
+            // ── Active Trip Alert ────────────
+            AnimatedVisibility(visible = activeTrip != null) {
+                activeTrip?.let { trip ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = EmergencyRed.copy(alpha = 0.15f)),
+                        border = CardDefaults.outlinedCardBorder().copy(
+                            width = 2.dp,
+                            brush = Brush.linearGradient(listOf(EmergencyRed, EmergencyOrange))
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(10.dp)
+                                        .clip(CircleShape)
+                                        .background(EmergencyRed)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("🚨 ACTIVE EMERGENCY ASSIGNED", color = Color.White, fontWeight = FontWeight.Black, fontSize = 16.sp)
+                            }
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Text("Type: ${trip.emergencyType.uppercase()}", color = TextWhite70, fontSize = 13.sp)
+                            Text("Phone: ${trip.phone ?: "N/A"}", color = TextWhite, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            
+                            Spacer(modifier = Modifier.height(12.dp))
+                            
+                            GlowButton(
+                                text = "OPEN GPS NAVIGATION",
+                                onClick = onNavigateToActiveRoute,
+                                variant = GlowVariant.DANGER,
+                                modifier = Modifier.fillMaxWidth(),
+                                icon = { Icon(Icons.Default.Route, null, tint = Color.White, modifier = Modifier.size(18.dp)) }
+                            )
+                        }
+                    }
+                }
+            }
+
+            // ── Status Bar ──
             Card(
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = SuccessGreen.copy(alpha = 0.1f)
-                )
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.06f))
             ) {
                 Row(
-                    modifier = Modifier.padding(12.dp),
+                    modifier = Modifier.padding(14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    val statusColor = if (hasLocation) SuccessGreen else EmergencyOrange
                     Box(
                         modifier = Modifier
-                            .size(10.dp)
-                            .clip(RoundedCornerShape(5.dp))
-                            .background(SuccessGreen)
+                            .size(12.dp)
+                            .clip(CircleShape)
+                            .background(statusColor)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
                     Text(
-                        text = if (hasLocation) "Online — GPS Active" else "Online — Waiting for GPS",
-                        color = SuccessGreen,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 13.sp
+                        text = if (hasLocation) "Online • Receiving SOS Alerts" else "Offline • Checking Location...",
+                        color = statusColor,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
                     )
+                    Spacer(modifier = Modifier.weight(1f))
+                    if (isCheckingTrip) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = PrimaryBlue)
+                    } else {
+                        Icon(Icons.Default.Sync, null, tint = TextWhite50, modifier = Modifier.size(16.dp))
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // ═══════════════════════════════════════════
-            //  LIVE MAP — STREET VIEW
-            // ═══════════════════════════════════════════
+            // ── Area Map ──
             Card(
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.04f)),
-                border = CardDefaults.outlinedCardBorder().copy(
-                    width = 1.dp,
-                    brush = Brush.linearGradient(listOf(PrimaryBlue.copy(alpha = 0.3f), Color.Transparent))
-                )
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.04f))
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Map, null, tint = PrimaryBlue, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Area Map — Nearby Hospitals", color = TextWhite, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                        Spacer(modifier = Modifier.weight(1f))
-                        Box(
-                            modifier = Modifier.size(8.dp).clip(CircleShape)
-                                .background(if (hasLocation) SuccessGreen else EmergencyOrange)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            if (hasLocation) "LIVE" else "NO GPS",
-                            color = if (hasLocation) SuccessGreen else EmergencyOrange,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Area Awareness Map", color = TextWhite, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Spacer(modifier = Modifier.height(10.dp))
                     OfflineMapView(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(200.dp),
-                        centerLatitude = if (hasLocation) latitude else 17.4426,
-                        centerLongitude = if (hasLocation) longitude else 78.5006,
-                        zoomLevel = if (hasLocation) 14.0 else 12.0,
+                            .height(220.dp),
+                        centerLatitude = latitude,
+                        centerLongitude = longitude,
+                        zoomLevel = 15.0,
                         markers = mapMarkers,
                         showMyLocation = hasLocation,
                         myLatitude = latitude,
@@ -238,28 +296,23 @@ fun DriverDashboardScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
+            // ── Start New Emergency ──
             Text(
-                text = "Select Emergency Type",
+                text = "Dispatch New Emergency",
                 color = TextWhite,
                 fontSize = 20.sp,
-                fontWeight = FontWeight.Black,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
+                fontWeight = FontWeight.Black
             )
-            Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Choose the emergency type to start response",
+                text = "If you are with a patient, start here",
                 color = TextWhite70,
-                fontSize = 14.sp,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
+                fontSize = 13.sp
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // Emergency cards — using Column with Rows for 2-column grid in scroll
             val chunked = emergencies.chunked(2)
             chunked.forEach { row ->
                 Row(
@@ -272,106 +325,66 @@ fun DriverDashboardScreen(
                             title = emergency.name,
                             description = emergency.description,
                             isSelected = selectedEmergency == emergency.id,
-                            onClick = { selectedEmergency = emergency.id },
+                            onClick = { 
+                                selectedEmergency = emergency.id
+                                error = null
+                            },
                             modifier = Modifier.weight(1f)
                         )
                     }
-                    if (row.size == 1) {
-                        Spacer(modifier = Modifier.weight(1f))
-                    }
+                    if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
                 }
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // Protocols display
-            selectedEmergency?.let { sel ->
-                val selected = emergencies.find { it.id == sel }
-                if (selected != null) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Card(
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = PrimaryBlue.copy(alpha = 0.1f)
-                        )
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                text = "${selected.icon} ${selected.name} Protocols",
-                                color = TextWhite,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            selected.protocols.forEach { protocol ->
-                                Row(
-                                    modifier = Modifier.padding(vertical = 2.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        Icons.Default.CheckCircle, null,
-                                        tint = SuccessGreen,
-                                        modifier = Modifier.size(14.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(protocol, color = TextWhite70, fontSize = 13.sp)
+            if (selectedEmergency != null) {
+                val selected = emergencies.find { it.id == selectedEmergency }!!
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = PrimaryBlue.copy(alpha = 0.08f))
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("Ready to start: ${selected.name}", color = TextWhite, fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.height(10.dp))
+                        GlowButton(
+                            text = if (isLoading) "Initializing..." else "Start Response Hub →",
+                            onClick = {
+                                if (!hasLocation) {
+                                    error = "Location detection in progress..."
+                                    return@GlowButton
                                 }
-                            }
-                        }
+                                isLoading = true
+                                scope.launch {
+                                    try {
+                                        api.selectEmergency(
+                                            EmergencySelectRequest(
+                                                driverId = sessionManager.getDriverId(),
+                                                emergencyType = selected.apiType,
+                                                latitude = latitude,
+                                                longitude = longitude
+                                            )
+                                        )
+                                        onNavigateToHospitalSelection()
+                                    } catch (_: Exception) {
+                                        onNavigateToHospitalSelection()
+                                    } finally {
+                                        isLoading = false
+                                    }
+                                }
+                            },
+                            isLoading = isLoading,
+                            variant = GlowVariant.PRIMARY,
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
                 }
             }
 
             if (error != null) {
                 Spacer(modifier = Modifier.height(12.dp))
-                Text(error ?: "", color = TextRed300, fontSize = 13.sp)
+                Text(error!!, color = EmergencyOrange, fontSize = 13.sp)
             }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // Continue button
-            GlowButton(
-                text = if (isLoading) "Starting Emergency..." else "Continue →",
-                onClick = {
-                    if (selectedEmergency == null) {
-                        error = "Please select an emergency type"
-                        return@GlowButton
-                    }
-                    if (!hasLocation) {
-                        error = "GPS location required"
-                        return@GlowButton
-                    }
-                    error = null
-                    isLoading = true
-                    val selected = emergencies.find { it.id == selectedEmergency }!!
-                    scope.launch {
-                        try {
-                            val response = api.selectEmergency(
-                                EmergencySelectRequest(
-                                    driverId = sessionManager.getDriverId(),
-                                    emergencyType = selected.apiType,
-                                    latitude = latitude,
-                                    longitude = longitude
-                                )
-                            )
-                            if (response.isSuccessful && response.body()?.success == true) {
-                                onNavigateToHospitalSelection()
-                            } else {
-                                // Even if API fails, navigate — hospitals page has mock data
-                                onNavigateToHospitalSelection()
-                            }
-                        } catch (e: Exception) {
-                            // Navigate anyway with mock data
-                            onNavigateToHospitalSelection()
-                        } finally {
-                            isLoading = false
-                        }
-                    }
-                },
-                enabled = selectedEmergency != null,
-                isLoading = isLoading,
-                variant = GlowVariant.PRIMARY,
-                modifier = Modifier.fillMaxWidth()
-            )
 
             Spacer(modifier = Modifier.height(32.dp))
         }

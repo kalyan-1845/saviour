@@ -15,6 +15,7 @@ class SessionManager(context: Context) {
         private const val KEY_DRIVER = "current_driver"
         private const val KEY_IS_LOGGED_IN = "is_logged_in"
         private const val KEY_DRIVER_ID = "driver_id"
+        private const val KEY_SIMULATED_SOS = "simulated_sos"
     }
 
     fun saveDriverSession(driver: Driver) {
@@ -44,5 +45,26 @@ class SessionManager(context: Context) {
 
     fun logout() {
         prefs.edit().clear().apply()
+    }
+
+    /**
+     * Store a simulated SOS trip ID locally for cross-screen testing (on the same device).
+     */
+    fun saveSimulatedSOS(tripId: String) {
+        prefs.edit().putString(KEY_SIMULATED_SOS, tripId).apply()
+    }
+
+    /**
+     * Retrieve the last simulated SOS trip ID.
+     */
+    fun getSimulatedSOS(): String? {
+        return prefs.getString(KEY_SIMULATED_SOS, null)
+    }
+
+    /**
+     * Clear the simulated SOS after it has been "detected".
+     */
+    fun clearSimulatedSOS() {
+        prefs.edit().remove(KEY_SIMULATED_SOS).apply()
     }
 }

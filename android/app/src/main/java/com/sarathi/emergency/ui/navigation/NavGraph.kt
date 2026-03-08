@@ -101,6 +101,7 @@ fun NavGraph(api: SarathiApi, sessionManager: SessionManager) {
         composable(Routes.SOS) {
             SOSScreen(
                 api = api,
+                sessionManager = sessionManager,
                 onBack = {
                     navController.navigate(Routes.SPLASH) {
                         popUpTo(Routes.SOS) { inclusive = true }

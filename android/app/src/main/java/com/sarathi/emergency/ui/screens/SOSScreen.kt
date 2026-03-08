@@ -58,6 +58,7 @@ import java.util.*
 @Composable
 fun SOSScreen(
     api: SarathiApi,
+    sessionManager: com.sarathi.emergency.data.SessionManager,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -154,8 +155,31 @@ fun SOSScreen(
         }
     }
 
-    // Build map markers
-    val mapMarkers = remember(sosResponse, latitude, longitude, hasLocation) {
+    // Auto-refresh SOS status if active
+    LaunchedEffect(sosResponse?.tripId) {
+        val tripId = sosResponse?.tripId ?: return@LaunchedEffect
+        // Only if it was successful or offline (checking if it gets promoted to a real trip)
+        while (true) {
+            delay(5000) // Every 5 seconds
+            try {
+                val response = api.trackSos(tripId = tripId)
+                if (response.isSuccessful && response.body()?.success == true && response.body()?.trip != null) {
+                    val trip = response.body()?.trip!!
+                    // Update local state with latest trip info
+                    sosResponse = sosResponse?.copy(
+                        status = trip.status,
+                        etaMinutes = trip.estimatedTime ?: 0,
+                        hospital = if (trip.hospitalName != null) SosHospital(name = trip.hospitalName) else sosResponse?.hospital
+                    )
+                    isOfflineMode = false 
+                }
+            } catch (_: Exception) {
+                // Keep current state if network fails
+            }
+        }
+    }
+
+    // Builder for map markers ...
         buildList {
             if (hasLocation) {
                 add(MapMarker(latitude, longitude, "📍 Your Location", "GPS Active", MarkerColor.BLUE))
@@ -390,16 +414,24 @@ fun SOSScreen(
                                         sosResponse = response.body()
                                         trackPhone = phoneNumber
                                         isOfflineMode = false
+                                        // Save for Driver simulation testing
+                                        response.body()?.tripId?.let { sessionManager.saveSimulatedSOS(it) }
                                     } else {
                                         // API error — offline SOS
                                         createOfflineSosResponse(phoneNumber, latitude, longitude, hasLocation)
-                                            .also { sosResponse = it }
+                                            .also { 
+                                                sosResponse = it
+                                                sessionManager.saveSimulatedSOS(it.tripId)
+                                            }
                                         isOfflineMode = true
                                     }
                                 } catch (_: Exception) {
                                     // No network — offline SOS
                                     createOfflineSosResponse(phoneNumber, latitude, longitude, hasLocation)
-                                        .also { sosResponse = it }
+                                        .also { 
+                                            sosResponse = it
+                                            sessionManager.saveSimulatedSOS(it.tripId)
+                                        }
                                     isOfflineMode = true
                                 } finally {
                                     isSending = false
