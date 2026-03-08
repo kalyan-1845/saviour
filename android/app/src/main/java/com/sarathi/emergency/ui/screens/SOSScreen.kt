@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -78,6 +79,8 @@ fun SOSScreen(
     var notifyResult by remember { mutableStateOf<NotifyResponse?>(null) }
     var notifyLoading by remember { mutableStateOf(false) }
     var voiceEnabled by remember { mutableStateOf(true) }
+    var trackPhone by remember { mutableStateOf("") }
+    var isTracking by remember { mutableStateOf(false) }
     var trackResult by remember { mutableStateOf<TrackResponse?>(null) }
     var trackError by remember { mutableStateOf<String?>(null) }
 
