@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronLeft, Navigation2, Mic, Volume2, MapPin, Clock, Gauge } from "lucide-react";
+import { ChevronLeft, Navigation2, MapPin, Clock, Gauge } from "lucide-react";
 import Link from "next/link";
 import { MapComponent } from "@/components/map/MapComponent";
 import { VoiceAssistant } from "@/components/shared/VoiceAssistant";
@@ -10,22 +10,14 @@ import { GlowButton } from "@/components/shared/GlowButton";
 import { useEmergencyStore } from "@/store/useEmergencyStore";
 import { useLocation } from "@/hooks/useLocation";
 
-interface Hospital {
-  id: string;
-  name: string;
-  lat: number;
-  lng: number;
-  specialties: string[];
-}
-
 export default function ActiveRoute() {
   const activeTrip = useEmergencyStore((state) => state.activeTrip);
   const hospitals = useEmergencyStore((state) => state.hospitals);
-  const selectedHospital: Hospital = hospitals[0] || { 
+  const selectedHospital = hospitals[0] || { 
     id: "default", 
     name: "Selected Hospital", 
-    lat: 28.6139, 
-    lng: 77.209, 
+    latitude: 17.3850, 
+    longitude: 78.4867, 
     specialties: [] 
   };
   const { location: userLocationHook } = useLocation();
@@ -42,7 +34,7 @@ export default function ActiveRoute() {
     return () => clearInterval(interval);
   }, []);
 
-  const center = { lat: selectedHospital.lat, lng: selectedHospital.lng };
+  const center = { lat: selectedHospital.latitude, lng: selectedHospital.longitude };
 
   return (
     <motion.div
@@ -101,7 +93,9 @@ export default function ActiveRoute() {
                 <Navigation2 size={20} />
                 Recalculate Route
               </GlowButton>
-              <VoiceAssistant className="p-3 bg-white/10 rounded-xl flex-shrink-0" />
+              <div className="bg-white/10 p-3 rounded-xl">
+                <VoiceAssistant />
+              </div>
             </div>
           </div>
         </motion.div>
@@ -109,4 +103,3 @@ export default function ActiveRoute() {
     </motion.div>
   );
 }
-

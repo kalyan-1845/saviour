@@ -40,7 +40,7 @@ interface SarathiApi {
     ): Response<AssignedTripResponse>
 
     @POST("api/driver/update")
-    suspend fun selectEmergency(@Body request: EmergencySelectRequest): Response<EmergencySelectResponse>
+    suspend fun updateDriver(@Body request: DriverUpdateRequest): Response<DriverUpdateResponse>
 
     @POST("api/driver/notify")
     suspend fun notifyAuthorities(@Body request: NotifyRequest): Response<NotifyResponse>
@@ -59,16 +59,6 @@ interface SarathiApi {
         @Query("longitude") longitude: Double? = null
     ): Response<HospitalListResponse>
 
-    // ══════════════════════════════════════
-    //  POLICE / HOSPITAL PANELS
-    // ══════════════════════════════════════
-
-    @GET("api/police/alerts")
-    suspend fun getPoliceAlerts(
-        @Query("stationId") stationId: String? = null,
-        @Query("stationName") stationName: String? = null
-    ): Response<PoliceAlertResponse>
-
     @GET("api/hospital/cases")
     suspend fun getHospitalCases(
         @Query("hospitalId") hospitalId: String? = null,
@@ -77,6 +67,16 @@ interface SarathiApi {
 
     @POST("api/hospital/update")
     suspend fun updateHospitalCaseStatus(@Body request: UpdateCaseStatusRequest): Response<UpdateCaseStatusResponse>
+
+    // ══════════════════════════════════════
+    //  POLICE
+    // ══════════════════════════════════════
+
+    @GET("api/police/alerts")
+    suspend fun getPoliceAlerts(
+        @Query("stationId") stationId: String? = null,
+        @Query("stationName") stationName: String? = null
+    ): Response<PoliceAlertResponse>
 
     // ══════════════════════════════════════
     //  AI ANALYSIS

@@ -29,7 +29,7 @@ import com.sarathi.emergency.ui.components.GlowButton
 import com.sarathi.emergency.ui.components.GlowVariant
 import com.sarathi.emergency.ui.theme.*
 
-private const val PANEL_PASSWORD = "63050"
+private const val PANEL_PASSWORD = "4455"
 
 data class PoliceStation(
     val id: String,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import connectDB from '@/lib/mongodb';
+import { coordinateEmergency } from '@/lib/openclaw';
 import Driver from '@/models/Driver';
 import EmergencyTrip from '@/models/EmergencyTrip';
 import Hospital from '@/models/Hospital';
@@ -10,8 +11,6 @@ import User from '@/models/User';
 type EmergencyType = 'medical' | 'accident' | 'fire' | 'crime' | 'police' | 'heart_attack';
 
 const EARTH_RADIUS_KM = 6371;
-const DEMO_DRIVER_EMAIL = 'prsnlkalyan@gmail.com';
-const DEMO_DRIVER_PASSWORD = 'kalyan1234';
 const SPECIALTY_KEYWORDS: Record<string, string[]> = {
   heart_attack: ['cardio', 'cardiac', 'heart'],
   stroke: ['neuro', 'stroke'],
@@ -65,43 +64,6 @@ function validateCoordinates(latitude: unknown, longitude: unknown): latitude is
   );
 }
 
-async function getOrCreateDemoDriver(latitude: number, longitude: number) {
-  let driver = await Driver.findOne({ email: DEMO_DRIVER_EMAIL });
-  if (driver) {
-    const hasCoords =
-      Array.isArray(driver.currentLocation?.coordinates) &&
-      driver.currentLocation.coordinates.length === 2 &&
-      Number.isFinite(driver.currentLocation.coordinates[0]) &&
-      Number.isFinite(driver.currentLocation.coordinates[1]);
-
-    if (!hasCoords) {
-      driver.currentLocation = {
-        type: 'Point',
-        coordinates: [longitude, latitude],
-      };
-      await driver.save();
-    }
-
-    return driver;
-  }
-
-  driver = await Driver.create({
-    fullName: 'Govindamma',
-    email: DEMO_DRIVER_EMAIL,
-    phone: '9701700099',
-    licenseNumber: `TS-DEMO-${Date.now()}`,
-    vehicleNumber: `TS-09-DEMO-${Math.floor(Math.random() * 900 + 100)}`,
-    password: DEMO_DRIVER_PASSWORD,
-    isAvailable: true,
-    currentLocation: {
-      type: 'Point',
-      coordinates: [longitude, latitude],
-    },
-  });
-
-  return driver;
-}
-
 export async function POST(request: NextRequest) {
   try {
     await connectDB();
@@ -121,18 +83,47 @@ export async function POST(request: NextRequest) {
 
     const medicalEmergency = isMedicalEmergency(emergencyType);
 
+    // Auto-registration / lookup
     let user = await User.findOne({ phone });
+    let autoRegistered = false;
     if (!user) {
       const generatedPassword = Math.random().toString(36).slice(-10);
       const hashedPassword = await bcrypt.hash(generatedPassword, 10);
       user = await User.create({
-        fullName: `Emergency User ${phone.slice(-4)}`,
-        email: `auto_${phone.replace(/[^\d]/g, '')}@sarathi.in`,
+        fullName: `Citizen ${phone.slice(-4)}`,
+        email: `sos_${phone.replace(/[^\d]/g, '')}_${Date.now()}@sarathi.emergency`,
         phone,
         password: hashedPassword,
       });
+      autoRegistered = true;
     }
 
+    // 1. Find the nearest available driver within 20km
+    const nearestDriver = await Driver.findOne({
+      isAvailable: true,
+      currentLocation: {
+        $nearSphere: {
+          $geometry: {
+            type: 'Point',
+            coordinates: [longitude, latitude],
+          },
+          $maxDistance: 20000, // 20km in meters
+        },
+      },
+    });
+
+    if (!nearestDriver) {
+      return NextResponse.json(
+        { error: 'No available drivers found within response radius (20km).' },
+        { status: 404 }
+      );
+    }
+
+    const driverLongitude = nearestDriver.currentLocation?.coordinates?.[0] ?? longitude;
+    const driverLatitude = nearestDriver.currentLocation?.coordinates?.[1] ?? latitude;
+    const driverDistanceKm = calculateDistanceKm(latitude, longitude, driverLatitude, driverLongitude);
+
+    // 2. Find nearest hospital/police station
     const hospitals = medicalEmergency
       ? await Hospital.find({
           isEmergencyAvailable: true,
@@ -144,145 +135,113 @@ export async function POST(request: NextRequest) {
       isEmergencyAvailable: true,
     }).lean();
 
-    const demoDriver = await getOrCreateDemoDriver(latitude, longitude);
-    const driverLongitude = demoDriver.currentLocation?.coordinates?.[0] ?? longitude;
-    const driverLatitude = demoDriver.currentLocation?.coordinates?.[1] ?? latitude;
-    const demoDriverDistanceKm = calculateDistanceKm(latitude, longitude, driverLatitude, driverLongitude);
+    const nearestHospital = medicalEmergency && hospitals.length > 0
+      ? hospitals
+          .map((h) => ({
+            ...h,
+            distanceKm: calculateDistanceKm(latitude, longitude, h.latitude, h.longitude),
+          }))
+          .sort((a, b) => a.distanceKm - b.distanceKm)[0]
+      : null;
 
-    const specialtyMatchedHospitals = hospitals.filter((hospital) =>
-      matchesSpecialty(emergencyType, hospital.specialties ?? [])
-    );
-    const candidateHospitals =
-      specialtyMatchedHospitals.length > 0 ? specialtyMatchedHospitals : hospitals;
-
-    const nearestHospital =
-      candidateHospitals.length > 0
-        ? candidateHospitals
-            .filter(
-              (hospital) =>
-                Number.isFinite(hospital.latitude) &&
-                Number.isFinite(hospital.longitude)
-            )
-            .map((hospital) => ({
-              ...hospital,
-              distanceKm: calculateDistanceKm(latitude, longitude, hospital.latitude, hospital.longitude),
-            }))
-            .sort((a, b) => a.distanceKm - b.distanceKm)[0]
-        : null;
-
-    const nearestPoliceStation =
-      policeStations.length > 0
-        ? policeStations
-            .filter(
-              (station) =>
-                Number.isFinite(station.latitude) &&
-                Number.isFinite(station.longitude)
-            )
-            .map((station) => ({
-              ...station,
-              distanceKm: calculateDistanceKm(latitude, longitude, station.latitude, station.longitude),
-            }))
-            .sort((a, b) => a.distanceKm - b.distanceKm)[0]
-        : null;
+    const nearestPoliceStation = policeStations.length > 0
+      ? policeStations
+          .map((s) => ({
+            ...s,
+            distanceKm: calculateDistanceKm(latitude, longitude, s.latitude, s.longitude),
+          }))
+          .sort((a, b) => a.distanceKm - b.distanceKm)[0]
+      : null;
 
     const etaMinutes = estimateEtaMinutes(
-      medicalEmergency ? nearestHospital?.distanceKm ?? demoDriverDistanceKm : nearestPoliceStation?.distanceKm ?? 1
+      medicalEmergency ? (nearestHospital?.distanceKm ?? driverDistanceKm) : (nearestPoliceStation?.distanceKm ?? 1)
     );
 
+    // 3. Create the trip
     const emergencyTrip = await EmergencyTrip.create({
       userId: user._id,
-      driverId: demoDriver._id,
+      driverId: nearestDriver._id,
       emergencyType,
-      pickupLocation: {
-        latitude,
-        longitude,
-      },
+      pickupLocation: { latitude, longitude },
       hospitalId: nearestHospital?._id?.toString(),
       hospitalName: nearestHospital?.name,
       policeStationId: nearestPoliceStation?._id?.toString(),
       policeStationName: nearestPoliceStation?.name,
-      notifiedPoliceStationIds: nearestPoliceStation?._id ? [String(nearestPoliceStation._id)] : [],
-      dropoffLocation:
-        medicalEmergency && nearestHospital
-          ? {
-              latitude: nearestHospital.latitude,
-              longitude: nearestHospital.longitude,
-              address: nearestHospital.address,
-            }
-          : !medicalEmergency && nearestPoliceStation
-            ? {
-                latitude: nearestPoliceStation.latitude,
-                longitude: nearestPoliceStation.longitude,
-                address: nearestPoliceStation.address,
-              }
-            : undefined,
       status: 'assigned',
-      policeAlertMessage: nearestPoliceStation
-        ? `Emergency assigned near ${nearestPoliceStation.name}. Driver ${demoDriver.fullName} (${demoDriver.vehicleNumber}) dispatched.`
-        : undefined,
       estimatedTime: etaMinutes,
       distance: medicalEmergency
-        ? nearestHospital?.distanceKm ?? demoDriverDistanceKm
-        : nearestPoliceStation?.distanceKm,
+        ? (nearestHospital?.distanceKm ?? driverDistanceKm)
+        : (nearestPoliceStation?.distanceKm ?? 1),
+      dropoffLocation: medicalEmergency && nearestHospital
+        ? {
+            latitude: nearestHospital.latitude,
+            longitude: nearestHospital.longitude,
+            address: nearestHospital.address,
+          }
+        : !medicalEmergency && nearestPoliceStation
+        ? {
+            latitude: nearestPoliceStation.latitude,
+            longitude: nearestPoliceStation.longitude,
+            address: nearestPoliceStation.address,
+          }
+        : undefined,
     });
+
+    // Trigger OpenClaw Coordination (Async)
+    const tripData = {
+      tripId: emergencyTrip._id,
+      emergencyType,
+      user: { fullName: user.fullName, phone: user.phone },
+      driver: { fullName: nearestDriver.fullName, phone: nearestDriver.phone },
+      hospital: nearestHospital,
+      policeStation: nearestPoliceStation,
+      etaMinutes,
+    };
+    coordinateEmergency(tripData).catch(err => console.error('Agent coordination error:', err));
 
     return NextResponse.json(
       {
         success: true,
         tripId: emergencyTrip._id,
         status: emergencyTrip.status,
+        emergencyType,
         user: {
           id: user._id,
           phone: user.phone,
           fullName: user.fullName,
         },
         driver: {
-          id: demoDriver._id,
-          fullName: demoDriver.fullName,
-          phone: demoDriver.phone,
-          vehicleNumber: demoDriver.vehicleNumber,
-          distanceKm: Number(demoDriverDistanceKm.toFixed(2)),
+          id: nearestDriver._id,
+          fullName: nearestDriver.fullName,
+          phone: nearestDriver.phone,
+          vehicleNumber: nearestDriver.vehicleNumber,
+          distanceKm: Number(driverDistanceKm.toFixed(2)),
         },
-        hospital: nearestHospital
-          ? {
-              id: nearestHospital._id,
-              name: nearestHospital.name,
-              address: nearestHospital.address,
-              phone: nearestHospital.phone,
-              specialties: nearestHospital.specialties,
-              distanceKm: Number(nearestHospital.distanceKm.toFixed(2)),
-              latitude: nearestHospital.latitude,
-              longitude: nearestHospital.longitude,
-              mapUrl: `https://www.google.com/maps?q=${nearestHospital.latitude},${nearestHospital.longitude}`,
-            }
-          : null,
-        policeStation: nearestPoliceStation
-          ? {
-              id: nearestPoliceStation._id,
-              name: nearestPoliceStation.name,
-              address: nearestPoliceStation.address,
-              phone: nearestPoliceStation.phone,
-              distanceKm: Number(nearestPoliceStation.distanceKm.toFixed(2)),
-              latitude: nearestPoliceStation.latitude,
-              longitude: nearestPoliceStation.longitude,
-              mapUrl: `https://www.google.com/maps?q=${nearestPoliceStation.latitude},${nearestPoliceStation.longitude}`,
-            }
-          : null,
+        hospital: nearestHospital ? {
+          id: nearestHospital._id,
+          name: nearestHospital.name,
+          phone: nearestHospital.phone,
+          distanceKm: Number(nearestHospital.distanceKm.toFixed(2)),
+          latitude: nearestHospital.latitude,
+          longitude: nearestHospital.longitude,
+        } : null,
+        policeStation: nearestPoliceStation ? {
+          id: nearestPoliceStation._id,
+          name: nearestPoliceStation.name,
+          phone: nearestPoliceStation.phone,
+          distanceKm: Number(nearestPoliceStation.distanceKm.toFixed(2)),
+          latitude: nearestPoliceStation.latitude,
+          longitude: nearestPoliceStation.longitude,
+        } : null,
         etaMinutes,
-        location: {
-          latitude,
-          longitude,
-          mapUrl: `https://www.google.com/maps?q=${latitude},${longitude}`,
-        },
-        autoRegistered: true,
+        autoRegistered,
       },
       { status: 201 }
     );
   } catch (error) {
     console.error('SOS processing failed:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Failed to process SOS request.', details: message },
+      { error: 'Failed to process SOS request.', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

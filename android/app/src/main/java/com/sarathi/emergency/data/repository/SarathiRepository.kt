@@ -2,9 +2,7 @@ package com.sarathi.emergency.data.repository
 
 import android.util.Log
 import com.sarathi.emergency.data.api.SarathiApi
-import com.sarathi.emergency.data.models.HospitalCase
-import com.sarathi.emergency.data.models.PoliceAlert
-import com.sarathi.emergency.data.models.UpdateCaseStatusRequest
+import com.sarathi.emergency.data.models.*
 import retrofit2.Response
 
 sealed class RepoResult<out T> {
@@ -17,6 +15,63 @@ class SarathiRepository(
 ) {
     companion object {
         private const val TAG = "SarathiRepository"
+    }
+
+    // ─── AUTH ───
+
+    suspend fun driverLogin(request: LoginRequest): RepoResult<LoginResponse> {
+        return safeApiCall(
+            call = { api.driverLogin(request) },
+            mapper = { it }
+        )
+    }
+
+    suspend fun driverRegister(request: RegisterRequest): RepoResult<RegisterResponse> {
+        return safeApiCall(
+            call = { api.driverRegister(request) },
+            mapper = { it }
+        )
+    }
+
+    // ─── SOS ───
+
+    suspend fun sendSos(request: SosRequest): RepoResult<SosResponse> {
+        return safeApiCall(
+            call = { api.sendSos(request) },
+            mapper = { it }
+        )
+    }
+
+    suspend fun trackSos(phone: String?, tripId: String?): RepoResult<TrackResponse> {
+        return safeApiCall(
+            call = { api.trackSos(phone, tripId) },
+            mapper = { it }
+        )
+    }
+
+    // ─── DRIVER ───
+
+    suspend fun getAssignedTrip(driverId: String?, email: String?): RepoResult<AssignedTripResponse> {
+        return safeApiCall(
+            call = { api.getAssignedTrip(driverId, email) },
+            mapper = { it }
+        )
+    }
+
+    suspend fun updateDriverState(request: DriverUpdateRequest): RepoResult<DriverUpdateResponse> {
+        return safeApiCall(
+            call = { api.updateDriver(request) },
+            mapper = { it }
+        )
+    }
+
+    // ─── HOSPITALS ───
+    
+    suspend fun getHospitals(lat: Double, lng: Double): RepoResult<HospitalListResponse> {
+        return safeApiCall(
+            call = { api.getHospitals(latitude = lat, longitude = lng) },
+            mapper = { it }
+        )
     }
 
     suspend fun getHospitalCases(
@@ -36,6 +91,8 @@ class SarathiRepository(
         )
     }
 
+    // ─── POLICE ───
+
     suspend fun getPoliceAlerts(
         stationId: String?,
         stationName: String?
@@ -45,6 +102,8 @@ class SarathiRepository(
             mapper = { it.alerts }
         )
     }
+
+    // ─── UTILS ───
 
     private suspend fun <TBody, TData> safeApiCall(
         call: suspend () -> Response<TBody>,

@@ -85,16 +85,12 @@ fun HospitalDashboardScreen(
     hospitalId: String? = null,
     hospitalName: String,
     hospitalArea: String,
+    viewModel: HospitalDashboardViewModel,
     sessionManager: SessionManager,
-    api: SarathiApi,
     onLogout: () -> Unit
 ) {
     val context = LocalContext.current
     val locationHelper = remember { LocationHelper(context) }
-    val repository = remember(api) { SarathiRepository(api) }
-    val viewModel: HospitalDashboardViewModel = viewModel(
-        factory = remember(repository) { HospitalDashboardViewModelFactory(repository) }
-    )
     val uiState by viewModel.uiState.collectAsState()
 
     var latitude by remember { mutableDoubleStateOf(17.4426) }

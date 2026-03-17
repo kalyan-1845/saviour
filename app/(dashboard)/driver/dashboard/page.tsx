@@ -13,7 +13,7 @@ interface Emergency {
   title: string;
   description: string;
   icon: any;
-  color: string;
+  variant: 'default' | 'highlight' | 'warning';
   protocol: string;
 }
 
@@ -22,40 +22,40 @@ const emergencies: Emergency[] = [
     id: 'cardiac',
     title: 'Cardiac Arrest',
     description: 'CPR, Defibrillator, Cardiologist needed',
-    icon: HeartPulse,
-    color: 'from-red-500 to-red-600',
+    icon: <HeartPulse />,
+    variant: 'warning',
     protocol: 'Prepare defibrillator, notify cardiologist',
   },
   {
     id: 'pediatric',
     title: 'Pediatric Emergency',
     description: 'Child specialist, pediatric kit',
-    icon: Baby,
-    color: 'from-orange-500 to-orange-600',
+    icon: <Baby />,
+    variant: 'highlight',
     protocol: 'Contact parents, child kit ready',
   },
   {
     id: 'trauma',
     title: 'Trauma/Accident',
     description: 'Trauma team, imaging, surgery prep',
-    icon: UserMinus,
-    color: 'from-yellow-500 to-yellow-600',
+    icon: <UserMinus />,
+    variant: 'warning',
     protocol: 'Stabilize patient, trauma bay',
   },
   {
     id: 'stroke',
     title: 'Stroke',
     description: 'Neuro team, CT scan, thrombolysis window',
-    icon: Brain,
-    color: 'from-purple-500 to-purple-600',
+    icon: <Brain />,
+    variant: 'highlight',
     protocol: 'CT scan stat, neuro consult',
   },
   {
     id: 'burn',
     title: 'Burn Injury',
     description: 'Burn specialist, ICU, cooling protocol',
-    icon: Flame,
-    color: 'from-emerald-500 to-emerald-600',
+    icon: <Flame />,
+    variant: 'highlight',
     protocol: 'Cooling, fluid resuscitation',
   },
 ];
@@ -68,8 +68,10 @@ export default function DriverDashboard() {
   const handleSelect = (emergency: Emergency) => {
     setSelectedEmergency(emergency);
     setActiveTrip({ 
-      id: emergency.id, 
-      type: emergency.title, 
+      id: emergency.id,
+      emergencyType: emergency.id === 'cardiac' ? 'heart_attack' : 'medical',
+      location: { latitude: 17.3850, longitude: 78.4867 }, // Default for transition
+      timestamp: Date.now(),
       status: 'assigned' as const 
     });
     window.location.href = '/driver/hospital-selection';
@@ -103,12 +105,11 @@ export default function DriverDashboard() {
                 title={emergency.title}
                 description={emergency.description}
                 icon={emergency.icon}
-                color={emergency.color}
+                variant={emergency.variant}
                 onClick={() => handleSelect(emergency)}
-                selected={selectedEmergency?.id === emergency.id}
               />
               <div className="mt-4">
-                <p className="font-semibold text-slate-300 mb-2">{emergency.protocol}</p>
+                <p className="font-semibold text-slate-300 mb-2 text-sm">{emergency.protocol}</p>
                 <GlowButton size="sm" className="w-full" onClick={() => handleSelect(emergency)}>
                   Select {emergency.title}
                 </GlowButton>
@@ -120,4 +121,3 @@ export default function DriverDashboard() {
     </motion.div>
   );
 }
-

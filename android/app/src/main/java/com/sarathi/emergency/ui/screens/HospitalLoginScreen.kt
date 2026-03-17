@@ -28,7 +28,7 @@ import com.sarathi.emergency.ui.components.GlowButton
 import com.sarathi.emergency.ui.components.GlowVariant
 import com.sarathi.emergency.ui.theme.*
 
-private const val PANEL_PASSWORD = "63050"
+private const val PANEL_PASSWORD = "4455"
 
 data class LoginHospital(
     val id: String,
@@ -105,7 +105,7 @@ fun HospitalLoginScreen(
                 items(hospitals) { hospital ->
                     Card(
                         modifier = Modifier.fillMaxWidth().clickable {
-                            if (password == "63050") {
+                            if (password == PANEL_PASSWORD) {
                                 onLoginSuccess(hospital)
                             } else {
                                 error = "Invalid Access Pin"

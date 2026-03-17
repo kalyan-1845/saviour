@@ -1,130 +1,122 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronLeft, MapPin, Filter } from 'lucide-react';
+import { ChevronLeft, MapPin, Filter, Search } from 'lucide-react';
 import Link from 'next/link';
-import { useI18n } from '@/components/shared/LanguageProvider';
 import { HospitalCard, GlowButton } from '@/components/shared';
 import { useEmergencyStore } from '@/store/useEmergencyStore';
 
-const mockHospitals = [
-  {
-    id: '1',
-    name: 'Apollo Hospitals',
-    distance: '2.3 km',
-    eta: '4 min',
-    beds: 12,
-    specialties: ['Cardiac', 'Trauma', 'Neurology'],
-    rating: 4.8,
-    lat: 28.5597,
-    lng: 77.2350,
-  },
-  {
-    id: '2',
-    name: 'Max Super Speciality',
-    distance: '3.1 km',
-    eta: '6 min',
-    beds: 8,
-    specialties: ['Cardiac', 'ICU'],
-    rating: 4.6,
-    lat: 28.5812,
-    lng: 77.2940,
-  },
-  {
-    id: '3',
-    name: 'Fortis Hospital',
-    distance: '1.8 km',
-    eta: '3 min',
-    beds: 15,
-    specialties: ['Emergency', 'Burns'],
-    rating: 4.7,
-    lat: 28.5355,
-    lng: 77.1650,
-  },
-];
-
-interface Hospital {
-  id: string;
-  name: string;
-  distance: string;
-  eta: string;
-  beds: number;
-  specialties: string[];
-  rating: number;
-  lat: number;
-  lng: number;
-}
-
 export default function HospitalSelection() {
-  const { t } = useI18n();
   const activeTrip = useEmergencyStore((state) => state.activeTrip);
-  const updateStoreHospitals = useEmergencyStore((state) => state.setHospitals);
-  const [localHospitals, setLocalHospitals] = useState<Hospital[]>(mockHospitals);
+  const hospitals = useEmergencyStore((state) => state.hospitals);
+  const setStoreHospitals = useEmergencyStore((state) => state.setHospitals);
+  
   const [filter, setFilter] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleSelect = (hospital: Hospital) => {
-    updateStoreHospitals([hospital]);
+  useEffect(() => {
+    const fetchHospitals = async () => {
+      try {
+        const res = await fetch('/api/hospital');
+        const data = await res.json();
+        setStoreHospitals(data.hospitals || []);
+      } catch (err) {
+        console.error('Failed to fetch hospitals:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchHospitals();
+  }, [setStoreHospitals]);
+
+  const handleSelect = (hospital: any) => {
+    setStoreHospitals([hospital]);
     window.location.href = '/driver/active-route';
   };
 
-  const filteredHospitals = localHospitals.filter(h => 
-    h.specialties.some(s => s.toLowerCase().includes(filter.toLowerCase())) ||
-    h.name.toLowerCase().includes(filter.toLowerCase())
+  const filteredHospitals = hospitals.filter(h => 
+    h.name.toLowerCase().includes(filter.toLowerCase()) ||
+    (h.specialization && h.specialization.some(s => s.toLowerCase().includes(filter.toLowerCase())))
   );
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen p-6 bg-gradient-to-br from-slate-950 via-slate-900"
+      className="min-h-screen p-6 bg-slate-950"
     >
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <Link href="/driver/dashboard" className="flex items-center gap-2 text-slate-400 hover:text-white mb-6 inline-block">
-            <ChevronLeft size={20} />
-            Select Emergency Type
+      <div className="max-w-5xl mx-auto">
+        <div className="mb-10">
+          <Link href="/driver/dashboard" className="inline-flex items-center gap-2 text-slate-500 hover:text-white transition-colors mb-6 group">
+            <ChevronLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+            Back to Dashboard
           </Link>
-          <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center mb-8">
+          
+          <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
             <div>
-              <h1 className="text-3xl font-black gradient-text">Hospital Selection</h1>
-              <p className="text-slate-300">Emergency: <span className="font-semibold text-orange-400">{activeTrip?.type || 'Cardiac'}</span></p>
-            </div>
-            <div className="flex gap-2">
-              <div className="relative">
-                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                <input
-                  value={filter}
-                  onChange={(e) => setFilter(e.target.value)}
-                  placeholder="Filter by specialty"
-                  className="pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg focus:border-orange-400"
-                />
+              <h1 className="text-4xl font-black text-white tracking-tight mb-2">Hospital Selection</h1>
+              <div className="flex items-center gap-3">
+                <span className="px-2 py-0.5 rounded bg-red-500/10 border border-red-500/20 text-red-500 text-[10px] font-bold uppercase tracking-wider">
+                  Active SOS
+                </span>
+                <p className="text-slate-400 text-sm">
+                  Priority: <span className="text-white font-bold">{activeTrip?.emergencyType || 'General'}</span>
+                </p>
               </div>
-              <GlowButton size="sm" variant="secondary">
-                Sort by Distance
-              </GlowButton>
+            </div>
+
+            <div className="relative w-full md:w-80">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+              <input
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                placeholder="Search hospitals or specialties..."
+                className="w-full pl-12 pr-4 py-4 bg-slate-900 border border-white/10 rounded-2xl text-white placeholder:text-slate-600 focus:border-blue-500/50 outline-none transition-all shadow-xl"
+              />
             </div>
           </div>
         </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredHospitals.map((hospital) => (
-            <HospitalCard key={hospital.id} hospital={hospital} onSelect={() => {}}>
-              <div className="mt-4">
-                <GlowButton className="w-full" onClick={() => handleSelect(hospital)}>
-                  Navigate ({hospital.eta})
-                </GlowButton>
+
+        {isLoading ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
+            {[1, 2, 3, 4, 5, 6].map(i => (
+              <div key={i} className="h-64 bg-slate-900 rounded-3xl border border-white/5"></div>
+            ))}
+          </div>
+        ) : (
+          <>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredHospitals.map((hospital) => (
+                <div key={hospital.id || hospital._id} className="flex flex-col">
+                  <HospitalCard 
+                    hospital={{
+                      ...hospital,
+                      distance: hospital.distance ? `${hospital.distance} km` : 'Calculating...',
+                      eta: hospital.eta || 'Pending'
+                    }} 
+                    onSelect={() => handleSelect(hospital)}
+                  />
+                  <GlowButton 
+                    className="mt-4 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg shadow-blue-500/10" 
+                    onClick={() => handleSelect(hospital)}
+                  >
+                    Set Destination
+                  </GlowButton>
+                </div>
+              ))}
+            </div>
+
+            {filteredHospitals.length === 0 && (
+              <div className="text-center py-20 bg-slate-900/50 rounded-[40px] border border-dashed border-white/10">
+                <MapPin size={48} className="mx-auto text-slate-600 mb-4" />
+                <h3 className="text-white font-bold text-xl mb-1">No hospitals found</h3>
+                <p className="text-slate-500">Try adjusting your search or priority</p>
               </div>
-            </HospitalCard>
-          ))}
-        </div>
-        {filteredHospitals.length === 0 && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12">
-            <MapPin size={48} className="mx-auto text-slate-500 mb-4" />
-            <p className="text-slate-400">No hospitals match your filter</p>
-          </motion.div>
+            )}
+          </>
         )}
       </div>
     </motion.div>
   );
 }
-

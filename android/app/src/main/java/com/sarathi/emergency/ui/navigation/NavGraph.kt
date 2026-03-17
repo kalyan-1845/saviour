@@ -1,12 +1,17 @@
 package com.sarathi.emergency.ui.navigation
 
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.sarathi.emergency.data.SessionManager
 import com.sarathi.emergency.data.api.SarathiApi
+import com.sarathi.emergency.data.repository.SarathiRepository
 import com.sarathi.emergency.ui.screens.*
+import com.sarathi.emergency.ui.viewmodel.*
+import com.sarathi.emergency.util.LocationHelper
 
 object Routes {
     const val SPLASH = "splash"
@@ -25,6 +30,7 @@ object Routes {
 @Composable
 fun NavGraph(api: SarathiApi, sessionManager: SessionManager) {
     val navController = rememberNavController()
+    val context = LocalContext.current
 
     // Shared state for police/hospital dashboards
     var selectedStationName by remember { mutableStateOf("") }
@@ -41,6 +47,8 @@ fun NavGraph(api: SarathiApi, sessionManager: SessionManager) {
         composable(Routes.SPLASH) {
             SplashScreen(
                 isLoggedIn = sessionManager.isLoggedIn(),
+                isPoliceLoggedIn = sessionManager.getPoliceStationId().isNotEmpty(),
+                isHospitalLoggedIn = sessionManager.getHospitalId().isNotEmpty(),
                 onDriverLogin = {
                     navController.navigate(Routes.DRIVER_LOGIN) {
                         popUpTo(Routes.SPLASH) { inclusive = true }
@@ -53,6 +61,16 @@ fun NavGraph(api: SarathiApi, sessionManager: SessionManager) {
                 },
                 onGoToDashboard = {
                     navController.navigate(Routes.DASHBOARD) {
+                        popUpTo(Routes.SPLASH) { inclusive = true }
+                    }
+                },
+                onPoliceDashboard = {
+                    navController.navigate(Routes.POLICE_DASHBOARD) {
+                        popUpTo(Routes.SPLASH) { inclusive = true }
+                    }
+                },
+                onHospitalDashboard = {
+                    navController.navigate(Routes.HOSPITAL_DASHBOARD) {
                         popUpTo(Routes.SPLASH) { inclusive = true }
                     }
                 },
@@ -70,9 +88,12 @@ fun NavGraph(api: SarathiApi, sessionManager: SessionManager) {
         }
 
         composable(Routes.DRIVER_LOGIN) {
+            val repository = remember { SarathiRepository(api) }
+            val viewModel: DriverViewModel = viewModel(
+                factory = DriverViewModelFactory(repository, sessionManager)
+            )
             DriverLoginScreen(
-                api = api,
-                sessionManager = sessionManager,
+                viewModel = viewModel,
                 onLoginSuccess = {
                     navController.navigate(Routes.DASHBOARD) {
                         popUpTo(Routes.DRIVER_LOGIN) { inclusive = true }
@@ -88,9 +109,12 @@ fun NavGraph(api: SarathiApi, sessionManager: SessionManager) {
         }
 
         composable(Routes.DRIVER_REGISTER) {
+            val repository = remember { SarathiRepository(api) }
+            val viewModel: DriverViewModel = viewModel(
+                factory = DriverViewModelFactory(repository, sessionManager)
+            )
             DriverRegisterScreen(
-                api = api,
-                sessionManager = sessionManager,
+                viewModel = viewModel,
                 onRegisterSuccess = {
                     navController.navigate(Routes.DASHBOARD) {
                         popUpTo(Routes.DRIVER_REGISTER) { inclusive = true }
@@ -101,8 +125,13 @@ fun NavGraph(api: SarathiApi, sessionManager: SessionManager) {
         }
 
         composable(Routes.SOS) {
+            val repository = remember { SarathiRepository(api) }
+            val locationHelper = remember { LocationHelper(context) }
+            val viewModel: SOSViewModel = viewModel(
+                factory = SOSViewModelFactory(repository, locationHelper)
+            )
             SOSScreen(
-                api = api,
+                viewModel = viewModel,
                 sessionManager = sessionManager,
                 onBack = {
                     navController.navigate(Routes.SPLASH) {
@@ -113,9 +142,12 @@ fun NavGraph(api: SarathiApi, sessionManager: SessionManager) {
         }
 
         composable(Routes.DASHBOARD) {
+            val repository = remember { SarathiRepository(api) }
+            val viewModel: DriverViewModel = viewModel(
+                factory = DriverViewModelFactory(repository, sessionManager)
+            )
             DriverDashboardScreen(
-                api = api,
-                sessionManager = sessionManager,
+                viewModel = viewModel,
                 onNavigateToHospitalSelection = {
                     navController.navigate(Routes.HOSPITAL_SELECTION)
                 },
@@ -131,8 +163,12 @@ fun NavGraph(api: SarathiApi, sessionManager: SessionManager) {
         }
 
         composable(Routes.HOSPITAL_SELECTION) {
+            val repository = remember { SarathiRepository(api) }
+            val viewModel: HospitalSelectionViewModel = viewModel(
+                factory = HospitalSelectionViewModelFactory(repository)
+            )
             HospitalSelectionScreen(
-                api = api,
+                viewModel = viewModel,
                 onStartNavigation = {
                     navController.navigate(Routes.ACTIVE_ROUTE) {
                         popUpTo(Routes.HOSPITAL_SELECTION) { inclusive = true }
@@ -143,19 +179,21 @@ fun NavGraph(api: SarathiApi, sessionManager: SessionManager) {
         }
 
         composable(Routes.ACTIVE_ROUTE) {
+            val repository = remember { SarathiRepository(api) }
+            val viewModel: ActiveRouteViewModel = viewModel(
+                factory = ActiveRouteViewModelFactory(repository, sessionManager)
+            )
             ActiveRouteScreen(
-                api = api,
-                sessionManager = sessionManager,
+                viewModel = viewModel,
                 onComplete = {
                     navController.navigate(Routes.DASHBOARD) {
-                        popUpTo(0) { inclusive = true }
+                        popUpTo(Routes.ACTIVE_ROUTE) { inclusive = true }
                     }
                 },
                 onBack = { navController.popBackStack() }
             )
         }
 
-        // ── Police Panel ──
         composable(Routes.POLICE_LOGIN) {
             PoliceLoginScreen(
                 onLoginSuccess = { station ->
@@ -176,11 +214,15 @@ fun NavGraph(api: SarathiApi, sessionManager: SessionManager) {
         }
 
         composable(Routes.POLICE_DASHBOARD) {
+            val repository = remember { SarathiRepository(api) }
+            val viewModel: PoliceDashboardViewModel = viewModel(
+                factory = PoliceDashboardViewModelFactory(repository)
+            )
             PoliceDashboardScreen(
                 stationId = selectedStationId.ifEmpty { sessionManager.getPoliceStationId() },
                 stationName = selectedStationName.ifEmpty { "Hyderabad Central" },
                 stationArea = selectedStationArea.ifEmpty { "Abids" },
-                api = api,
+                viewModel = viewModel,
                 sessionManager = sessionManager,
                 onLogout = {
                     navController.navigate(Routes.SPLASH) {
@@ -190,7 +232,6 @@ fun NavGraph(api: SarathiApi, sessionManager: SessionManager) {
             )
         }
 
-        // ── Hospital Panel ──
         composable(Routes.HOSPITAL_LOGIN) {
             HospitalLoginScreen(
                 onLoginSuccess = { hospital ->
@@ -211,12 +252,16 @@ fun NavGraph(api: SarathiApi, sessionManager: SessionManager) {
         }
 
         composable(Routes.HOSPITAL_DASHBOARD) {
+            val repository = remember { SarathiRepository(api) }
+            val viewModel: HospitalDashboardViewModel = viewModel(
+                factory = HospitalDashboardViewModelFactory(repository)
+            )
             HospitalDashboardScreen(
                 hospitalId = selectedHospId.ifEmpty { sessionManager.getHospitalId() },
                 hospitalName = selectedHospName.ifEmpty { "Apollo" },
                 hospitalArea = selectedHospArea.ifEmpty { "Jubilee Hills" },
+                viewModel = viewModel,
                 sessionManager = sessionManager,
-                api = api,
                 onLogout = {
                     navController.navigate(Routes.SPLASH) {
                         popUpTo(0) { inclusive = true }

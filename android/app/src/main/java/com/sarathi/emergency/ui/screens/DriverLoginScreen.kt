@@ -25,44 +25,39 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.sarathi.emergency.data.SessionManager
-import com.sarathi.emergency.data.api.SarathiApi
-import com.sarathi.emergency.data.models.Driver
-import com.sarathi.emergency.data.models.LoginRequest
+import com.sarathi.emergency.data.models.DriverLoginRequest
 import com.sarathi.emergency.ui.components.GlowButton
 import com.sarathi.emergency.ui.components.GlowVariant
 import com.sarathi.emergency.ui.theme.*
-import android.util.Log
-import kotlinx.coroutines.launch
+import com.sarathi.emergency.ui.viewmodel.DriverUiState
+import com.sarathi.emergency.ui.viewmodel.DriverViewModel
 
 @Composable
 fun DriverLoginScreen(
-    api: SarathiApi,
-    sessionManager: SessionManager,
+    viewModel: DriverViewModel,
     onLoginSuccess: () -> Unit,
     onRegister: () -> Unit,
     onBack: () -> Unit
 ) {
-    val tag = "DriverLoginScreen"
+    val uiState by viewModel.uiState.collectAsState()
+    val focusManager = LocalFocusManager.current
+
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
-    var isLoading by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
-    val scope = rememberCoroutineScope()
-    val focusManager = LocalFocusManager.current
+
+    LaunchedEffect(uiState) {
+        if (uiState is DriverUiState.AuthSuccess) {
+            onLoginSuccess()
+        }
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(DarkNavy, Color(0xFF1E3A5F), DarkPurple)
-                )
-            )
+            .background(Brush.verticalGradient(listOf(DarkNavy, Color(0xFF1E3A5F), DarkPurple)))
     ) {
         Column(
             modifier = Modifier
@@ -73,7 +68,7 @@ fun DriverLoginScreen(
         ) {
             Spacer(modifier = Modifier.height(48.dp))
 
-            // Logo Branding
+            // Logo
             Box(
                 modifier = Modifier
                     .size(100.dp)
@@ -82,72 +77,37 @@ fun DriverLoginScreen(
                     .border(2.dp, Color.White.copy(alpha = 0.2f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    Icons.Default.Emergency,
-                    contentDescription = "Logo",
-                    tint = EmergencyRed,
-                    modifier = Modifier.size(50.dp)
-                )
+                Icon(Icons.Default.Emergency, null, tint = EmergencyRed, modifier = Modifier.size(50.dp))
             }
 
             Spacer(modifier = Modifier.height(16.dp))
             
-            Text(
-                text = "SARATHI",
-                color = TextWhite,
-                fontSize = 32.sp,
-                fontWeight = FontWeight.Black,
-                letterSpacing = 2.sp
-            )
-            Text(
-                text = "Emergency Vehicle Network",
-                color = TextBlue300,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium
-            )
+            Text("SARATHI", color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Black)
+            Text("Driver Access Portal", color = TextBlue300, fontSize = 14.sp)
 
             Spacer(modifier = Modifier.height(48.dp))
 
-            // Login Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.White.copy(alpha = 0.08f)
-                ),
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.08f)),
                 border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
             ) {
                 Column(modifier = Modifier.padding(24.dp)) {
-                    Text(
-                        text = "Login to Account",
-                        color = Color.White,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Text("Secure Login", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    if (error != null) {
-                        Text(
-                            text = error ?: "",
-                            color = EmergencyRed,
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(bottom = 12.dp)
-                        )
+                    if (uiState is DriverUiState.Error) {
+                        Text((uiState as DriverUiState.Error).message, color = EmergencyRed, fontSize = 12.sp, modifier = Modifier.padding(bottom = 12.dp))
                     }
 
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it },
-                        label = { Text("Email", color = TextWhite70) },
+                        label = { Text("Email Address") },
                         leadingIcon = { Icon(Icons.Default.Email, null, tint = TextBlue400) },
                         modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = TextWhite,
-                            unfocusedTextColor = TextWhite,
-                            focusedBorderColor = PrimaryBlue,
-                            unfocusedBorderColor = Color.White.copy(alpha = 0.2f)
-                        ),
-                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
                         keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
                     )
@@ -157,25 +117,16 @@ fun DriverLoginScreen(
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
-                        label = { Text("Password", color = TextWhite70) },
+                        label = { Text("Password") },
                         leadingIcon = { Icon(Icons.Default.Lock, null, tint = TextBlue400) },
                         trailingIcon = {
                             IconButton(onClick = { showPassword = !showPassword }) {
-                                Icon(
-                                    if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                    null, tint = TextBlue400
-                                )
+                                Icon(if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility, null, tint = TextBlue400)
                             }
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = TextWhite,
-                            unfocusedTextColor = TextWhite,
-                            focusedBorderColor = PrimaryBlue,
-                            unfocusedBorderColor = Color.White.copy(alpha = 0.2f)
-                        ),
+                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White),
                         visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                        singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
                     )
@@ -183,36 +134,13 @@ fun DriverLoginScreen(
                     Spacer(modifier = Modifier.height(24.dp))
 
                     GlowButton(
-                        text = if (isLoading) "Signing in..." else "LOGIN",
+                        text = if (uiState is DriverUiState.Loading) "AUTHENTICATING..." else "SIGN IN",
                         onClick = {
-                            if (email.isBlank() || password.isBlank()) {
-                                error = "Please fill all fields"
-                                return@GlowButton
-                            }
-                            isLoading = true
-                            scope.launch {
-                                try {
-                                    val response = api.driverLogin(LoginRequest(email.trim(), password))
-                                    if (response.isSuccessful && response.body()?.success == true) {
-                                        response.body()?.driver?.let { sessionManager.saveDriverSession(it) }
-                                        sessionManager.saveAuthToken(response.body()?.token)
-                                        onLoginSuccess()
-                                    } else {
-                                        // Offline fallback
-                                        Log.w(tag, "Online login failed with code ${response.code()}, using offline fallback")
-                                        performOfflineLogin(email, password, sessionManager)
-                                        onLoginSuccess()
-                                    }
-                                } catch (e: Exception) {
-                                    Log.e(tag, "Login exception, using offline fallback", e)
-                                    performOfflineLogin(email, password, sessionManager)
-                                    onLoginSuccess()
-                                } finally {
-                                    isLoading = false
-                                }
+                            if (email.isNotBlank() && password.isNotBlank()) {
+                                viewModel.login(DriverLoginRequest(email.trim(), password))
                             }
                         },
-                        isLoading = isLoading,
+                        isLoading = uiState is DriverUiState.Loading,
                         modifier = Modifier.fillMaxWidth(),
                         variant = GlowVariant.PRIMARY
                     )
@@ -222,25 +150,12 @@ fun DriverLoginScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             TextButton(onClick = onRegister) {
-                Text("Don't have an account? Sign Up", color = TextBlue400, fontWeight = FontWeight.Bold)
+                Text("New here? Create Driver Account", color = TextBlue400, fontWeight = FontWeight.Bold)
             }
 
             TextButton(onClick = onBack) {
-                Text("Back to Splash", color = TextWhite70)
+                Text("Return to Home", color = TextWhite70)
             }
         }
     }
-}
-
-private fun performOfflineLogin(email: String, password: String, sessionManager: SessionManager) {
-    val mockDriver = com.sarathi.emergency.data.models.Driver(
-        _id = "offline-driver-1",
-        fullName = "Offline Driver",
-        email = email,
-        phone = "9876543210",
-        licenseNumber = "OFFLINE-123",
-        vehicleNumber = "TS-01-EM-0001",
-        isAvailable = true
-    )
-    sessionManager.saveDriverSession(mockDriver)
 }

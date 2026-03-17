@@ -87,16 +87,12 @@ fun PoliceDashboardScreen(
     stationId: String? = null,
     stationName: String,
     stationArea: String,
-    api: SarathiApi,
+    viewModel: PoliceDashboardViewModel,
     sessionManager: SessionManager,
     onLogout: () -> Unit
 ) {
     val context = LocalContext.current
     val locationHelper = remember { LocationHelper(context) }
-    val repository = remember(api) { SarathiRepository(api) }
-    val viewModel: PoliceDashboardViewModel = viewModel(
-        factory = remember(repository) { PoliceDashboardViewModelFactory(repository) }
-    )
     val uiState by viewModel.uiState.collectAsState()
 
     var latitude by remember { mutableDoubleStateOf(17.4426) }
