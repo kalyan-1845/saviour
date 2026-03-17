@@ -64,7 +64,7 @@ class SOSViewModel(
             )
 
             when (val result = repository.sendSos(request)) {
-                is RepoResult.Success -> {
+                is RepoResult.Success<SosResponse> -> {
                     _uiState.value = SosUiState.Active(result.data)
                     startTracking(result.data.tripId)
                 }
@@ -80,7 +80,7 @@ class SOSViewModel(
         trackingJob = viewModelScope.launch {
             while (true) {
                 when (val result = repository.trackSos(null, tripId)) {
-                    is RepoResult.Success -> {
+                    is RepoResult.Success<TrackResponse> -> {
                         _uiState.value = SosUiState.Tracking(result.data)
                         if (result.data.trip?.status == "completed" || result.data.trip?.status == "cancelled") {
                             break

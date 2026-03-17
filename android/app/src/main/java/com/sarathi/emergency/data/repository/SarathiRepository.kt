@@ -65,6 +65,13 @@ class SarathiRepository(
         )
     }
 
+    suspend fun notifyAuthorities(request: NotifyRequest): RepoResult<NotifyResponse> {
+        return safeApiCall(
+            call = { api.notifyAuthorities(request) },
+            mapper = { it }
+        )
+    }
+
     // ─── HOSPITALS ───
     
     suspend fun getHospitals(lat: Double, lng: Double): RepoResult<HospitalListResponse> {
@@ -100,6 +107,13 @@ class SarathiRepository(
         return safeApiCall(
             call = { api.getPoliceAlerts(stationId = stationId, stationName = stationName) },
             mapper = { it.alerts }
+        )
+    }
+
+    suspend fun analyzeRoute(request: GroqRequest): RepoResult<GroqResponse> {
+        return safeApiCall(
+            call = { api.analyzeRoute(request) },
+            mapper = { it }
         )
     }
 

@@ -48,7 +48,7 @@ class PoliceDashboardViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(loading = true, error = null)
             when (val result = repository.getPoliceAlerts(stationId, stationName)) {
-                is RepoResult.Success -> {
+                is RepoResult.Success<List<PoliceAlert>> -> {
                     _uiState.value = _uiState.value.copy(
                         alerts = result.data,
                         loading = false,

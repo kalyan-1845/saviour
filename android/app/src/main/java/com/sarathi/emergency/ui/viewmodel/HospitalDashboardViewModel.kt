@@ -49,7 +49,7 @@ class HospitalDashboardViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(loading = true, error = null)
             when (val result = repository.getHospitalCases(hospitalId, hospitalName)) {
-                is RepoResult.Success -> {
+                is RepoResult.Success<List<HospitalCase>> -> {
                     _uiState.value = _uiState.value.copy(
                         cases = result.data,
                         loading = false,
@@ -75,7 +75,7 @@ class HospitalDashboardViewModel(
                     UpdateCaseStatusRequest(tripId = caseId, hospitalCaseStatus = newStatus)
                 )
             ) {
-                is RepoResult.Success -> {
+                is RepoResult.Success<Unit> -> {
                     _uiState.value = _uiState.value.copy(
                         cases = _uiState.value.cases.map {
                             if (it.id == caseId) it.copy(hospitalCaseStatus = newStatus) else it

@@ -52,7 +52,7 @@ class ActiveRouteViewModel(
             )
 
             when (val result = repository.analyzeRoute(request)) {
-                is RepoResult.Success -> {
+                is RepoResult.Success<GroqResponse> -> {
                     _uiState.value = _uiState.value.copy(
                         aiAnalysis = result.data.analysis,
                         isAnalyzing = false
@@ -85,7 +85,7 @@ class ActiveRouteViewModel(
             )
 
             when (val result = repository.notifyAuthorities(request)) {
-                is RepoResult.Success -> {
+                is RepoResult.Success<NotifyResponse> -> {
                     _uiState.value = _uiState.value.copy(
                         notifyResult = result.data,
                         notifyLoading = false
