@@ -1,8 +1,11 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
 package com.sarathi.emergency.ui.navigation
 
+import android.util.Log
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -12,6 +15,7 @@ import com.sarathi.emergency.data.repository.SarathiRepository
 import com.sarathi.emergency.ui.screens.*
 import com.sarathi.emergency.ui.viewmodel.*
 import com.sarathi.emergency.util.LocationHelper
+import androidx.compose.material3.ExperimentalMaterial3Api
 
 object Routes {
     const val SPLASH = "splash"
@@ -25,6 +29,44 @@ object Routes {
     const val POLICE_DASHBOARD = "police_dashboard"
     const val HOSPITAL_LOGIN = "hospital_login"
     const val HOSPITAL_DASHBOARD = "hospital_dashboard"
+}
+
+/**
+ * Safe navigation helper that prevents crashes from:
+ * - Double-navigation (clicking twice quickly)
+ * - Navigating after the composable is destroyed
+ * - Invalid backstack states
+ */
+private fun NavHostController.safeNavigate(
+    route: String,
+    popUpToRoute: String? = null,
+    inclusive: Boolean = true
+) {
+    try {
+        val currentRoute = currentBackStackEntry?.destination?.route
+        if (currentRoute == route) return // Already here, skip
+
+        navigate(route) {
+            popUpToRoute?.let {
+                popUpTo(it) { this.inclusive = inclusive }
+            }
+        }
+    } catch (e: Exception) {
+        Log.e("NavGraph", "Navigation failed to $route", e)
+    }
+}
+
+/**
+ * Safe navigation that clears the entire backstack.
+ */
+private fun NavHostController.safeNavigateClearAll(route: String) {
+    try {
+        navigate(route) {
+            popUpTo(graph.startDestinationId) { inclusive = true }
+        }
+    } catch (e: Exception) {
+        Log.e("NavGraph", "Navigation (clear all) failed to $route", e)
+    }
 }
 
 @Composable
@@ -50,39 +92,25 @@ fun NavGraph(api: SarathiApi, sessionManager: SessionManager) {
                 isPoliceLoggedIn = sessionManager.getPoliceStationId().isNotEmpty(),
                 isHospitalLoggedIn = sessionManager.getHospitalId().isNotEmpty(),
                 onDriverLogin = {
-                    navController.navigate(Routes.DRIVER_LOGIN) {
-                        popUpTo(Routes.SPLASH) { inclusive = true }
-                    }
+                    navController.safeNavigate(Routes.DRIVER_LOGIN, Routes.SPLASH)
                 },
                 onPublicSOS = {
-                    navController.navigate(Routes.SOS) {
-                        popUpTo(Routes.SPLASH) { inclusive = true }
-                    }
+                    navController.safeNavigate(Routes.SOS, Routes.SPLASH)
                 },
                 onGoToDashboard = {
-                    navController.navigate(Routes.DASHBOARD) {
-                        popUpTo(Routes.SPLASH) { inclusive = true }
-                    }
+                    navController.safeNavigate(Routes.DASHBOARD, Routes.SPLASH)
                 },
                 onPoliceDashboard = {
-                    navController.navigate(Routes.POLICE_DASHBOARD) {
-                        popUpTo(Routes.SPLASH) { inclusive = true }
-                    }
+                    navController.safeNavigate(Routes.POLICE_DASHBOARD, Routes.SPLASH)
                 },
                 onHospitalDashboard = {
-                    navController.navigate(Routes.HOSPITAL_DASHBOARD) {
-                        popUpTo(Routes.SPLASH) { inclusive = true }
-                    }
+                    navController.safeNavigate(Routes.HOSPITAL_DASHBOARD, Routes.SPLASH)
                 },
                 onPoliceLogin = {
-                    navController.navigate(Routes.POLICE_LOGIN) {
-                        popUpTo(Routes.SPLASH) { inclusive = true }
-                    }
+                    navController.safeNavigate(Routes.POLICE_LOGIN, Routes.SPLASH)
                 },
                 onHospitalLogin = {
-                    navController.navigate(Routes.HOSPITAL_LOGIN) {
-                        popUpTo(Routes.SPLASH) { inclusive = true }
-                    }
+                    navController.safeNavigate(Routes.HOSPITAL_LOGIN, Routes.SPLASH)
                 }
             )
         }
@@ -95,15 +123,13 @@ fun NavGraph(api: SarathiApi, sessionManager: SessionManager) {
             DriverLoginScreen(
                 viewModel = viewModel,
                 onLoginSuccess = {
-                    navController.navigate(Routes.DASHBOARD) {
-                        popUpTo(Routes.DRIVER_LOGIN) { inclusive = true }
-                    }
+                    navController.safeNavigate(Routes.DASHBOARD, Routes.DRIVER_LOGIN)
                 },
-                onRegister = { navController.navigate(Routes.DRIVER_REGISTER) },
+                onRegister = {
+                    navController.safeNavigate(Routes.DRIVER_REGISTER)
+                },
                 onBack = {
-                    navController.navigate(Routes.SPLASH) {
-                        popUpTo(Routes.DRIVER_LOGIN) { inclusive = true }
-                    }
+                    navController.safeNavigate(Routes.SPLASH, Routes.DRIVER_LOGIN)
                 }
             )
         }
@@ -116,11 +142,11 @@ fun NavGraph(api: SarathiApi, sessionManager: SessionManager) {
             DriverRegisterScreen(
                 viewModel = viewModel,
                 onRegisterSuccess = {
-                    navController.navigate(Routes.DASHBOARD) {
-                        popUpTo(Routes.DRIVER_REGISTER) { inclusive = true }
-                    }
+                    navController.safeNavigate(Routes.DASHBOARD, Routes.DRIVER_REGISTER)
                 },
-                onBack = { navController.popBackStack() }
+                onBack = {
+                    try { navController.popBackStack() } catch (_: Exception) {}
+                }
             )
         }
 
@@ -134,9 +160,7 @@ fun NavGraph(api: SarathiApi, sessionManager: SessionManager) {
                 viewModel = viewModel,
                 sessionManager = sessionManager,
                 onBack = {
-                    navController.navigate(Routes.SPLASH) {
-                        popUpTo(Routes.SOS) { inclusive = true }
-                    }
+                    navController.safeNavigate(Routes.SPLASH, Routes.SOS)
                 }
             )
         }
@@ -149,15 +173,13 @@ fun NavGraph(api: SarathiApi, sessionManager: SessionManager) {
             DriverDashboardScreen(
                 viewModel = viewModel,
                 onNavigateToHospitalSelection = {
-                    navController.navigate(Routes.HOSPITAL_SELECTION)
+                    navController.safeNavigate(Routes.HOSPITAL_SELECTION)
                 },
                 onNavigateToActiveRoute = {
-                    navController.navigate(Routes.ACTIVE_ROUTE)
+                    navController.safeNavigate(Routes.ACTIVE_ROUTE)
                 },
                 onLogout = {
-                    navController.navigate(Routes.SPLASH) {
-                        popUpTo(0) { inclusive = true }
-                    }
+                    navController.safeNavigateClearAll(Routes.SPLASH)
                 }
             )
         }
@@ -170,11 +192,11 @@ fun NavGraph(api: SarathiApi, sessionManager: SessionManager) {
             HospitalSelectionScreen(
                 viewModel = viewModel,
                 onStartNavigation = {
-                    navController.navigate(Routes.ACTIVE_ROUTE) {
-                        popUpTo(Routes.HOSPITAL_SELECTION) { inclusive = true }
-                    }
+                    navController.safeNavigate(Routes.ACTIVE_ROUTE, Routes.HOSPITAL_SELECTION)
                 },
-                onBack = { navController.popBackStack() }
+                onBack = {
+                    try { navController.popBackStack() } catch (_: Exception) {}
+                }
             )
         }
 
@@ -186,11 +208,11 @@ fun NavGraph(api: SarathiApi, sessionManager: SessionManager) {
             ActiveRouteScreen(
                 viewModel = viewModel,
                 onComplete = {
-                    navController.navigate(Routes.DASHBOARD) {
-                        popUpTo(Routes.ACTIVE_ROUTE) { inclusive = true }
-                    }
+                    navController.safeNavigate(Routes.DASHBOARD, Routes.ACTIVE_ROUTE)
                 },
-                onBack = { navController.popBackStack() }
+                onBack = {
+                    try { navController.popBackStack() } catch (_: Exception) {}
+                }
             )
         }
 
@@ -201,14 +223,10 @@ fun NavGraph(api: SarathiApi, sessionManager: SessionManager) {
                     selectedStationName = station.name
                     selectedStationArea = station.area
                     sessionManager.savePoliceStationId(station.id)
-                    navController.navigate(Routes.POLICE_DASHBOARD) {
-                        popUpTo(Routes.POLICE_LOGIN) { inclusive = true }
-                    }
+                    navController.safeNavigate(Routes.POLICE_DASHBOARD, Routes.POLICE_LOGIN)
                 },
                 onBack = {
-                    navController.navigate(Routes.SPLASH) {
-                        popUpTo(Routes.POLICE_LOGIN) { inclusive = true }
-                    }
+                    navController.safeNavigate(Routes.SPLASH, Routes.POLICE_LOGIN)
                 }
             )
         }
@@ -225,9 +243,7 @@ fun NavGraph(api: SarathiApi, sessionManager: SessionManager) {
                 viewModel = viewModel,
                 sessionManager = sessionManager,
                 onLogout = {
-                    navController.navigate(Routes.SPLASH) {
-                        popUpTo(0) { inclusive = true }
-                    }
+                    navController.safeNavigateClearAll(Routes.SPLASH)
                 }
             )
         }
@@ -239,14 +255,10 @@ fun NavGraph(api: SarathiApi, sessionManager: SessionManager) {
                     selectedHospName = hospital.name
                     selectedHospArea = hospital.area
                     sessionManager.saveHospitalId(hospital.id)
-                    navController.navigate(Routes.HOSPITAL_DASHBOARD) {
-                        popUpTo(Routes.HOSPITAL_LOGIN) { inclusive = true }
-                    }
+                    navController.safeNavigate(Routes.HOSPITAL_DASHBOARD, Routes.HOSPITAL_LOGIN)
                 },
                 onBack = {
-                    navController.navigate(Routes.SPLASH) {
-                        popUpTo(Routes.HOSPITAL_LOGIN) { inclusive = true }
-                    }
+                    navController.safeNavigate(Routes.SPLASH, Routes.HOSPITAL_LOGIN)
                 }
             )
         }
@@ -263,9 +275,7 @@ fun NavGraph(api: SarathiApi, sessionManager: SessionManager) {
                 viewModel = viewModel,
                 sessionManager = sessionManager,
                 onLogout = {
-                    navController.navigate(Routes.SPLASH) {
-                        popUpTo(0) { inclusive = true }
-                    }
+                    navController.safeNavigateClearAll(Routes.SPLASH)
                 }
             )
         }

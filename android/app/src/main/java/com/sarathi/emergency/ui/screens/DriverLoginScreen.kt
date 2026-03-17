@@ -47,9 +47,11 @@ fun DriverLoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
+    var hasNavigated by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState) {
-        if (uiState is DriverUiState.AuthSuccess) {
+        if (!hasNavigated && uiState is DriverUiState.AuthSuccess) {
+            hasNavigated = true
             onLoginSuccess()
         }
     }

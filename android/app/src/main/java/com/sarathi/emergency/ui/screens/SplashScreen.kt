@@ -42,6 +42,7 @@ fun SplashScreen(
     onHospitalLogin: () -> Unit = {}
 ) {
     var showContent by remember { mutableStateOf(false) }
+    var hasNavigated by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         delay(150)
@@ -49,12 +50,16 @@ fun SplashScreen(
     }
 
     LaunchedEffect(isLoggedIn, isPoliceLoggedIn, isHospitalLoggedIn) {
+        if (hasNavigated) return@LaunchedEffect
         if (isLoggedIn || isPoliceLoggedIn || isHospitalLoggedIn) {
             delay(800)
-            when {
-                isLoggedIn -> onGoToDashboard()
-                isPoliceLoggedIn -> onPoliceDashboard()
-                isHospitalLoggedIn -> onHospitalDashboard()
+            if (!hasNavigated) {
+                hasNavigated = true
+                when {
+                    isLoggedIn -> onGoToDashboard()
+                    isPoliceLoggedIn -> onPoliceDashboard()
+                    isHospitalLoggedIn -> onHospitalDashboard()
+                }
             }
         }
     }
