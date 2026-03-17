@@ -31,23 +31,31 @@ import kotlinx.coroutines.delay
 @Composable
 fun SplashScreen(
     isLoggedIn: Boolean,
+    isPoliceLoggedIn: Boolean = false,
+    isHospitalLoggedIn: Boolean = false,
     onDriverLogin: () -> Unit,
     onPublicSOS: () -> Unit,
     onGoToDashboard: () -> Unit,
+    onPoliceDashboard: () -> Unit = {},
+    onHospitalDashboard: () -> Unit = {},
     onPoliceLogin: () -> Unit = {},
     onHospitalLogin: () -> Unit = {}
 ) {
     var showContent by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        delay(300)
+        delay(150)
         showContent = true
     }
 
-    LaunchedEffect(isLoggedIn) {
-        if (isLoggedIn) {
-            delay(1200)
-            onGoToDashboard()
+    LaunchedEffect(isLoggedIn, isPoliceLoggedIn, isHospitalLoggedIn) {
+        if (isLoggedIn || isPoliceLoggedIn || isHospitalLoggedIn) {
+            delay(800)
+            when {
+                isLoggedIn -> onGoToDashboard()
+                isPoliceLoggedIn -> onPoliceDashboard()
+                isHospitalLoggedIn -> onHospitalDashboard()
+            }
         }
     }
 
@@ -116,7 +124,7 @@ fun SplashScreen(
                 textAlign = TextAlign.Center
             )
 
-            if (!isLoggedIn) {
+            if (!isLoggedIn && !isPoliceLoggedIn && !isHospitalLoggedIn) {
                 Spacer(modifier = Modifier.height(40.dp))
 
                 // ── Primary Actions ──
@@ -206,8 +214,14 @@ fun SplashScreen(
                 }
             } else {
                 Spacer(modifier = Modifier.height(32.dp))
-                Text("Welcome back!", color = SuccessGreen, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                Text("Loading dashboard...", color = TextWhite70, fontSize = 14.sp)
+                val roleName = when {
+                    isLoggedIn -> "Driver"
+                    isPoliceLoggedIn -> "Police"
+                    isHospitalLoggedIn -> "Hospital"
+                    else -> ""
+                }
+                Text("Welcome back, $roleName!", color = SuccessGreen, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text("Securely launching dashboard...", color = TextWhite70, fontSize = 14.sp)
             }
 
             Spacer(modifier = Modifier.height(32.dp))
