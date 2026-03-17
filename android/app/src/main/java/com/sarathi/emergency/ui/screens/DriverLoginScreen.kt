@@ -137,7 +137,7 @@ fun DriverLoginScreen(
                         text = if (uiState is DriverUiState.Loading) "AUTHENTICATING..." else "SIGN IN",
                         onClick = {
                             if (email.isNotBlank() && password.isNotBlank()) {
-                                viewModel.login(DriverLoginRequest(email.trim(), password))
+                                viewModel.login(LoginRequest(email.trim(), password))
                             }
                         },
                         isLoading = uiState is DriverUiState.Loading,

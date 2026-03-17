@@ -116,7 +116,7 @@ fun DriverRegisterScreen(
                             if (step == 1) {
                                 if (fullName.isNotBlank() && email.isNotBlank()) step = 2
                             } else {
-                                viewModel.register(DriverRegisterRequest(fullName, email, phone, licenseNumber, vehicleNumber, password))
+                                viewModel.register(RegisterRequest(fullName, email, phone, licenseNumber, vehicleNumber, password))
                             }
                         },
                         isLoading = uiState is DriverUiState.Loading,

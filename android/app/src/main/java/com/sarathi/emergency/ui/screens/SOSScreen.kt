@@ -70,7 +70,9 @@ fun SOSScreen(
             }
             (uiState as? SosUiState.Tracking)?.response?.let { res ->
                 res.driver?.currentLocation?.let { dloc ->
-                    add(MapMarker(dloc.latitude, dloc.longitude, "🚑 Ambulance", "Emergency Vehicle", MarkerColor.RED))
+                    val lat = dloc.latitude ?: 0.0
+                    val lng = dloc.longitude ?: 0.0
+                    add(MapMarker(lat, lng, "🚑 Ambulance", "Emergency Vehicle", MarkerColor.RED))
                 }
                 res.trip?.hospitalName?.let { hName ->
                     // Approximate location for visual feedback if hospital coords aren't in response
@@ -150,7 +152,7 @@ fun SOSScreen(
                         )
                     }
                     is SosUiState.Active, is SosUiState.Tracking -> {
-                        val response = if (state is SosUiState.Active) state.response else (state as SosUiState.Tracking).response
+                        val response: SosResponse? = if (state is SosUiState.Active) state.response else (state as SosUiState.Tracking).response as? SosResponse
                         SOSTrackingContent(
                             response = response,
                             onReset = { viewModel.reset() }
