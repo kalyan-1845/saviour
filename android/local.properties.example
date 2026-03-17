@@ -1,0 +1,13 @@
+# Android SDK path example (Windows)
+sdk.dir=C\\:\\Users\\<your-user>\\AppData\\Local\\Android\\Sdk
+
+# Google Maps key used by Android app
+MAPS_API_KEY=AIzaSy...
+
+# Android app API URL
+# Emulator: http://10.0.2.2:3000
+# Real phone: http://<your-laptop-lan-ip>:3000
+BASE_URL=http://10.0.2.2:3000
+
+# Keep false during in-app demo to avoid jumping to external apps
+ALLOW_EXTERNAL_APPS=false

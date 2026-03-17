@@ -1,7 +1,34 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
 }
+
+val localProperties = Properties().apply {
+    val localFile = rootProject.file("local.properties")
+    if (localFile.exists()) {
+        localFile.inputStream().use { load(it) }
+    }
+}
+
+val mapsApiKey: String =
+    localProperties.getProperty("MAPS_API_KEY")
+        ?: (project.findProperty("MAPS_API_KEY") as String?)
+        ?: System.getenv("MAPS_API_KEY")
+        ?: ""
+
+val allowExternalApps: String =
+    localProperties.getProperty("ALLOW_EXTERNAL_APPS")
+        ?: (project.findProperty("ALLOW_EXTERNAL_APPS") as String?)
+        ?: System.getenv("ALLOW_EXTERNAL_APPS")
+        ?: "false"
+
+val baseUrl: String =
+    localProperties.getProperty("BASE_URL")
+        ?: (project.findProperty("BASE_URL") as String?)
+        ?: System.getenv("BASE_URL")
+        ?: "http://10.0.2.2:3000"
 
 android {
     namespace = "com.sarathi.emergency"
@@ -19,8 +46,11 @@ android {
             useSupportLibrary = true
         }
 
-        // Base URL for API — change to your server IP/domain
-        buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:3000\"")
+        // Base URL for API, configurable from local.properties/env
+        buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
+        buildConfigField("String", "MAPS_API_KEY", "\"$mapsApiKey\"")
+        buildConfigField("boolean", "ALLOW_EXTERNAL_APPS", allowExternalApps)
+        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
     }
 
     buildTypes {

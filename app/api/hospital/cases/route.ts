@@ -7,19 +7,38 @@ import User from '@/models/User';
 export async function GET(request: NextRequest) {
   try {
     await connectDB();
-    const hospitalId = new URL(request.url).searchParams.get('hospitalId');
+    const searchParams = new URL(request.url).searchParams;
+    const hospitalId = searchParams.get('hospitalId');
+    const hospitalName = searchParams.get('hospitalName');
 
-    if (!hospitalId) {
-      return NextResponse.json({ error: 'hospitalId is required.' }, { status: 400 });
+    if (!hospitalId && !hospitalName) {
+      return NextResponse.json({ error: 'hospitalId or hospitalName is required.' }, { status: 400 });
     }
 
-    const trips = await EmergencyTrip.find({
-      hospitalId,
+    const query: Record<string, unknown> = {
       status: { $in: ['assigned', 'in-progress', 'accepted', 'completed'] },
-    })
+    };
+
+    if (hospitalId) {
+      query.hospitalId = hospitalId;
+    } else if (hospitalName) {
+      query.hospitalName = new RegExp(String(hospitalName), 'i');
+    }
+
+    let trips = await EmergencyTrip.find(query)
       .sort({ createdAt: -1 })
       .limit(50)
       .lean();
+
+    // Demo/stability fallback for dashboards with stale ids.
+    if (trips.length === 0) {
+      trips = await EmergencyTrip.find({
+        status: { $in: ['assigned', 'in-progress', 'accepted'] },
+      })
+        .sort({ createdAt: -1 })
+        .limit(25)
+        .lean();
+    }
 
     const userIds = trips.map((trip) => trip.userId).filter(Boolean);
     const driverIds = trips.map((trip) => trip.driverId).filter(Boolean);

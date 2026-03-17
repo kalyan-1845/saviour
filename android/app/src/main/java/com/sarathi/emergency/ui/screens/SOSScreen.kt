@@ -1,8 +1,7 @@
 package com.sarathi.emergency.ui.screens
 
 import android.Manifest
-import android.content.Intent
-import android.net.Uri
+import android.util.Log
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -44,6 +43,7 @@ import com.sarathi.emergency.ui.components.MapMarker
 import com.sarathi.emergency.ui.components.MarkerColor
 import com.sarathi.emergency.ui.components.OfflineMapView
 import com.sarathi.emergency.ui.theme.*
+import com.sarathi.emergency.util.ExternalActionHandler
 import com.sarathi.emergency.util.LocationHelper
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -57,6 +57,7 @@ fun SOSScreen(
     sessionManager: com.sarathi.emergency.data.SessionManager,
     onBack: () -> Unit
 ) {
+    val tag = "SOSScreen"
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val locationHelper = remember { LocationHelper(context) }
@@ -83,36 +84,43 @@ fun SOSScreen(
     var isTracking by remember { mutableStateOf(false) }
     var trackResult by remember { mutableStateOf<TrackResponse?>(null) }
     var trackError by remember { mutableStateOf<String?>(null) }
+    var driverLat by remember { mutableDoubleStateOf(17.4310) }
+    var driverLng by remember { mutableDoubleStateOf(78.4070) }
+    var driverEta by remember { mutableIntStateOf(5) }
 
     val locationPermission = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
 
-    // Setup GPS with more aggressive retry
     LaunchedEffect(locationPermission.status.isGranted) {
-        if (locationPermission.status.isGranted) {
-            locationAttempted = true
-            // Try up to 15 times (30 seconds)
-            repeat(15) {
-                if (!hasLocation) {
-                    locationHelper.getLastLocation { loc ->
-                        if (loc != null) {
-                            latitude = loc.latitude
-                            longitude = loc.longitude
-                            hasLocation = true
-                        }
-                    }
-                    if (!hasLocation) delay(2000)
-                }
-            }
+        if (!locationPermission.status.isGranted) {
+            locationPermission.launchPermissionRequest()
+            return@LaunchedEffect
+        }
+
+        locationAttempted = true
+        repeat(8) {
             if (!hasLocation) {
-                // One final try with continuous updates
-                locationHelper.requestLocationUpdates { loc ->
-                    if (!hasLocation) {
+                locationHelper.getLastLocation { loc ->
+                    if (loc != null) {
                         latitude = loc.latitude
                         longitude = loc.longitude
                         hasLocation = true
                     }
                 }
+                if (!hasLocation) delay(1500)
             }
+        }
+    }
+
+    DisposableEffect(locationPermission.status.isGranted) {
+        if (!locationPermission.status.isGranted) {
+            onDispose { }
+        } else {
+            val stopUpdates = locationHelper.requestLocationUpdates { loc ->
+                latitude = loc.latitude
+                longitude = loc.longitude
+                hasLocation = true
+            }
+            onDispose { stopUpdates() }
         }
     }
 
@@ -123,22 +131,24 @@ fun SOSScreen(
             delay(10000) // Every 10 seconds check for updates
             try {
                 val response = api.trackSos(tripId = tripId)
-                if (response.isSuccessful && response.body()?.success == true && response.body()?.trip != null) {
-                    val trip = response.body()?.trip!!
+                val body = response.body()
+                if (response.isSuccessful && body?.success == true && body.trip != null) {
+                    val trip = body.trip
+                    body.driver?.currentLocation?.latitude?.let { driverLat = it }
+                    body.driver?.currentLocation?.longitude?.let { driverLng = it }
                     sosResponse = sosResponse?.copy(
                         status = trip.status,
                         etaMinutes = trip.estimatedTime ?: 0,
                         hospital = if (trip.hospitalName != null) SosHospital(name = trip.hospitalName) else sosResponse?.hospital
                     )
-                    isOfflineMode = false 
+                    isOfflineMode = false
+                    Log.d(tag, "SOS tracking update received for $tripId")
                 }
-            } catch (_: Exception) {}
+            } catch (error: Exception) {
+                Log.e(tag, "SOS tracking refresh failed", error)
+            }
         }
     }
-
-    var driverLat by remember { mutableDoubleStateOf(17.4310) }
-    var driverLng by remember { mutableDoubleStateOf(78.4070) }
-    var driverEta by remember { mutableIntStateOf(5) }
 
     val mapMarkers = remember(sosResponse, latitude, longitude, hasLocation, driverLat, driverLng) {
         buildList {
@@ -328,8 +338,9 @@ fun SOSScreen(
                 GlowButton(
                     text = if (isSending) "DISPATCHING PROTOCOL..." else "ACTIVATE SEND SOS",
                     onClick = {
-                        if (phoneNumber.isBlank()) {
-                            sosError = "Please enter your phone number"
+                        val sanitizedPhone = phoneNumber.filter { it.isDigit() }
+                        if (sanitizedPhone.length < 10) {
+                            sosError = "Please enter a valid phone number"
                             return@GlowButton
                         }
                         sosError = null
@@ -339,28 +350,31 @@ fun SOSScreen(
                             // SIMULATE SMS BROADCAST
                             if (broadcastToFamily) {
                                 // In a real app, this would use SMS Manager
-                                println("SARATHI: SMS Sent to Emergency Contacts with location: https://maps.google.com/?q=$latitude,$longitude")
+                                Log.i(tag, "Emergency contact broadcast prepared for $latitude,$longitude")
                             }
                             try {
-                                val response = api.sendSos(SosRequest(phoneNumber, latitude, longitude, emergencyType = selectedType))
+                                val response = api.sendSos(SosRequest(sanitizedPhone, latitude, longitude, emergencyType = selectedType))
                                 if (response.isSuccessful && response.body() != null) {
                                     sosResponse = response.body()
-                                    trackPhone = phoneNumber
+                                    trackPhone = sanitizedPhone
                                     isOfflineMode = false
                                     response.body()?.let { 
                                         sessionManager.saveSimulatedMission(it.tripId, selectedType, it.status, latitude, longitude)
                                     }
+                                    Log.i(tag, "SOS sent with tripId=${response.body()?.tripId}")
                                 } else {
                                     val fallbackId = "OFFLINE_" + System.currentTimeMillis()
                                     sosResponse = SosResponse(success = true, tripId = fallbackId, status = "pending", message = "Offline Protocol Activated")
                                     sessionManager.saveSimulatedMission(fallbackId, selectedType, "pending", latitude, longitude)
                                     isOfflineMode = true
+                                    Log.w(tag, "SOS API failed (${response.code()}); switched to offline mode")
                                 }
                             } catch (e: Exception) {
                                 val fallbackId = "OFFLINE_" + System.currentTimeMillis()
                                 sosResponse = SosResponse(success = true, tripId = fallbackId, status = "pending", message = "Offline Protocol Activated")
                                 sessionManager.saveSimulatedMission(fallbackId, selectedType, "pending", latitude, longitude)
                                 isOfflineMode = true
+                                Log.e(tag, "SOS API exception; switched to offline mode", e)
                             } finally {
                                 isSending = false
                             }
@@ -377,8 +391,11 @@ fun SOSScreen(
                 // FAILSAFE BUTTON
                 OutlinedButton(
                     onClick = {
-                        val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:112"))
-                        context.startActivity(intent)
+                        ExternalActionHandler.dial(
+                            context = context,
+                            phone = "112",
+                            blockedMessage = "External dialer disabled in app mode"
+                        )
                     },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
@@ -454,7 +471,7 @@ fun SOSScreen(
                                 }
                                 Spacer(modifier = Modifier.height(12.dp))
                                 
-                                val protocols = firstAidProtocols[selectedType] ?: firstAidProtocols["medical"]!!
+                                val protocols = firstAidProtocols[selectedType] ?: firstAidProtocols["medical"].orEmpty()
                                 protocols.forEachIndexed { index, text ->
                                     Row(modifier = Modifier.padding(vertical = 4.dp)) {
                                         Box(
@@ -474,7 +491,13 @@ fun SOSScreen(
                         
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             Button(
-                                onClick = { context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:112"))) },
+                                onClick = {
+                                    ExternalActionHandler.dial(
+                                        context = context,
+                                        phone = "112",
+                                        blockedMessage = "External dialer disabled in app mode"
+                                    )
+                                },
                                 modifier = Modifier.weight(1f),
                                 colors = ButtonDefaults.buttonColors(containerColor = EmergencyRed)
                             ) {
@@ -483,7 +506,13 @@ fun SOSScreen(
                                 Text("Call 112", fontSize = 12.sp)
                             }
                             Button(
-                                onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=hospitals+near+me"))) },
+                                onClick = {
+                                    ExternalActionHandler.openUrl(
+                                        context = context,
+                                        url = "geo:0,0?q=hospitals+near+me",
+                                        blockedMessage = "External map app disabled in app mode"
+                                    )
+                                },
                                 modifier = Modifier.weight(1f),
                                 colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
                             ) {
@@ -531,10 +560,12 @@ fun SOSScreen(
                                 val res = api.trackSos(phone = trackPhone)
                                 if (res.isSuccessful && res.body()?.success == true) {
                                     trackResult = res.body()
+                                    Log.d(tag, "Manual tracking success for $trackPhone")
                                 } else {
                                     trackError = "No active SOS found for this number"
                                 }
                             } catch (e: Exception) {
+                                Log.e(tag, "Manual tracking failed", e)
                                 trackError = "Cannot track — internal error"
                             } finally {
                                 isTracking = false
@@ -549,7 +580,7 @@ fun SOSScreen(
             }
 
             if (trackError != null) {
-                Text(trackError!!, color = EmergencyOrange, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+                Text(trackError.orEmpty(), color = EmergencyOrange, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
             }
 
             trackResult?.trip?.let { trip ->

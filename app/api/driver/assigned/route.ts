@@ -20,13 +20,17 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): nu
 export async function GET(request: NextRequest) {
   try {
     await connectDB();
-    const email = new URL(request.url).searchParams.get('email');
+    const searchParams = new URL(request.url).searchParams;
+    const email = searchParams.get('email');
+    const driverId = searchParams.get('driverId');
 
-    if (!email) {
-      return NextResponse.json({ error: 'Driver email is required.' }, { status: 400 });
+    if (!email && !driverId) {
+      return NextResponse.json({ error: 'driverId or driver email is required.' }, { status: 400 });
     }
 
-    const driver = await Driver.findOne({ email: email.toLowerCase() }).lean();
+    const driver = driverId
+      ? await Driver.findById(driverId).lean()
+      : await Driver.findOne({ email: String(email).toLowerCase() }).lean();
     if (!driver) {
       return NextResponse.json({ error: 'Driver not found.' }, { status: 404 });
     }

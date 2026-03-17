@@ -13,13 +13,17 @@ interface Location {
  */
 export function useLocation() {
   const [location, setLocation] = useState<Location | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(
+    typeof navigator !== 'undefined' && !navigator.geolocation
+      ? 'Geolocation is not supported by this browser'
+      : null
+  );
+  const [isLoading, setIsLoading] = useState(
+    !(typeof navigator !== 'undefined' && !navigator.geolocation)
+  );
 
   useEffect(() => {
     if (!navigator.geolocation) {
-      setError('Geolocation is not supported by this browser');
-      setIsLoading(false);
       return;
     }
 

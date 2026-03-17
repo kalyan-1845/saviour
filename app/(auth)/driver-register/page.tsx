@@ -133,10 +133,8 @@ export default function DriverRegisterPage() {
         confirmPassword: '',
       });
 
-      // Redirect to login after 2 seconds
-      setTimeout(() => {
-        window.location.href = '/driver-login';
-      }, 2000);
+      // Redirect to login immediately for speed
+      window.location.href = '/driver-login';
 
     } catch (err: any) {
       setError(err.message || 'Registration failed. Please try again.');

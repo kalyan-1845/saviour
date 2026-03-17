@@ -1,67 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// Mock hospital database
-const hospitals = [
-  {
-    id: '1',
-    name: 'Apollo Hospital Delhi',
-    latitude: 28.5597,
-    longitude: 77.235,
-    bedsAvailable: 8,
-    specialization: ['Cardiac', 'Trauma', 'Neurology'],
-    rating: 4.8,
-    contact: '+91-11-XXXX-XXXX',
-  },
-  {
-    id: '2',
-    name: 'Max Super Specialty',
-    latitude: 28.5812,
-    longitude: 77.294,
-    bedsAvailable: 5,
-    specialization: ['Pediatric', 'Burn', 'Trauma'],
-    rating: 4.7,
-    contact: '+91-11-XXXX-XXXX',
-  },
-  {
-    id: '3',
-    name: 'Delhi Heart & Lung Institute',
-    latitude: 28.5693,
-    longitude: 77.2109,
-    bedsAvailable: 12,
-    specialization: ['Cardiac', 'Stroke'],
-    rating: 4.9,
-    contact: '+91-11-XXXX-XXXX',
-  },
-];
+import connectDB from '@/lib/mongodb';
+import Hospital from '@/models/Hospital';
 
 /**
  * GET /api/hospital
- * Get available hospitals with filters
+ * Get available hospitals with filters from database
  */
 export async function GET(request: NextRequest) {
   try {
+    await connectDB();
+
     const { searchParams } = new URL(request.url);
     const specialization = searchParams.get('specialization');
-    const latitude = searchParams.get('latitude');
-    const longitude = searchParams.get('longitude');
+    const latitudeParam = searchParams.get('latitude');
+    const longitudeParam = searchParams.get('longitude');
 
-    let filtered = hospitals;
+    let query: any = {};
 
     // Filter by specialization
     if (specialization) {
-      filtered = filtered.filter((h) =>
-        h.specialization.some((s) =>
-          s.toLowerCase().includes(specialization.toLowerCase())
-        )
-      );
+      query.specialties = { $regex: specialization, $options: 'i' };
     }
 
-    // Sort by distance if coordinates provided
-    if (latitude && longitude) {
-      const userLat = parseFloat(latitude);
-      const userLng = parseFloat(longitude);
+    let hospitals = await Hospital.find(query);
 
-      filtered.sort((a, b) => {
+    // Sort by distance if coordinates provided
+    if (latitudeParam && longitudeParam) {
+      const userLat = parseFloat(latitudeParam);
+      const userLng = parseFloat(longitudeParam);
+
+      hospitals.sort((a, b) => {
         const distA = Math.sqrt(
           Math.pow(a.latitude - userLat, 2) + Math.pow(a.longitude - userLng, 2)
         );
@@ -72,7 +40,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({ success: true, hospitals: filtered });
+    return NextResponse.json({ success: true, hospitals });
   } catch (error) {
     console.error('Hospital fetch error:', error);
     return NextResponse.json(
@@ -94,9 +62,9 @@ export async function POST(request: NextRequest) {
     if (action === 'alert') {
       // Send pre-arrival alert to hospital
       console.log(`Pre-arrival alert sent to hospital ${hospitalId}:`, patientData);
-      
-      // TODO: Integrate with hospital notification system
-      
+
+      // TODO: Integrate with hospital notification system (e.g., Twilio/Email)
+
       return NextResponse.json({
         success: true,
         message: `Hospital ${hospitalId} has been alerted`,

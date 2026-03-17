@@ -7728,6 +7728,23 @@
                     }
                 },
                 {
+                    "source": "C:\\Users\\prsnl\\OneDrive\\Desktop\\saviour - Copy\\android\\app\\src\\main\\res\\values\\strings.xml",
+                    "from": {
+                        "startLines": "2,3,5,4",
+                        "startColumns": "4,4,4,4",
+                        "startOffsets": "57,103,209,158",
+                        "endColumns": "44,53,68,49",
+                        "endOffsets": "97,152,273,203"
+                    },
+                    "to": {
+                        "startLines": "122,208,210,240",
+                        "startColumns": "4,4,4,4",
+                        "startOffsets": "7511,14661,14773,16440",
+                        "endColumns": "44,53,68,49",
+                        "endOffsets": "7551,14710,14837,16485"
+                    }
+                },
+                {
                     "source": "C:\\Users\\prsnl\\.gradle\\caches\\transforms-3\\15683ba0f4e359741be3d1ac6ec01816\\transformed\\activity-1.8.2\\res\\values\\values.xml",
                     "from": {
                         "startLines": "2,3",
@@ -7781,7 +7798,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\prsnl\\OneDrive\\Desktop\\sarathi-emergency\\android\\app\\src\\main\\res\\values\\colors.xml",
+                    "source": "C:\\Users\\prsnl\\OneDrive\\Desktop\\saviour - Copy\\android\\app\\src\\main\\res\\values\\colors.xml",
                     "from": {
                         "startLines": "10,8,7,5,4,2,3,6,9",
                         "startColumns": "4,4,4,4,4,4,4,4,4",
@@ -7795,23 +7812,6 @@
                         "startOffsets": "431,1275,1326,1372,1425,1607,1656,1707,1757",
                         "endColumns": "41,50,45,52,49,48,50,49,41",
                         "endOffsets": "468,1321,1367,1420,1470,1651,1702,1752,1794"
-                    }
-                },
-                {
-                    "source": "C:\\Users\\prsnl\\OneDrive\\Desktop\\sarathi-emergency\\android\\app\\src\\main\\res\\values\\strings.xml",
-                    "from": {
-                        "startLines": "2,3,5,4",
-                        "startColumns": "4,4,4,4",
-                        "startOffsets": "57,103,209,158",
-                        "endColumns": "44,53,68,49",
-                        "endOffsets": "97,152,273,203"
-                    },
-                    "to": {
-                        "startLines": "122,208,210,240",
-                        "startColumns": "4,4,4,4",
-                        "startOffsets": "7511,14661,14773,16440",
-                        "endColumns": "44,53,68,49",
-                        "endOffsets": "7551,14710,14837,16485"
                     }
                 },
                 {

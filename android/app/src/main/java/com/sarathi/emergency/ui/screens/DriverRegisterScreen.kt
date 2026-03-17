@@ -1,8 +1,10 @@
 package com.sarathi.emergency.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -14,6 +16,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
@@ -39,14 +43,19 @@ fun DriverRegisterScreen(
     onRegisterSuccess: () -> Unit,
     onBack: () -> Unit
 ) {
+    var step by remember { mutableIntStateOf(1) } // 1: Basic, 2: Vehicle details
+    
+    // Step 1 fields
     var fullName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
-    var licenseNumber by remember { mutableStateOf("") }
-    var vehicleNumber by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
-    var showPassword by remember { mutableStateOf(false) }
+    
+    // Step 2 fields
+    var vehicleType by remember { mutableStateOf("ambulance") } // ambulance, police, fire
+    var vehicleNumber by remember { mutableStateOf("") }
+    var licenseNumber by remember { mutableStateOf("") }
+    
     var isLoading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
@@ -64,225 +73,233 @@ fun DriverRegisterScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(24.dp),
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(48.dp))
 
-            // Header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onBack) {
-                    Icon(
-                        Icons.Default.ArrowBack,
-                        contentDescription = "Back",
-                        tint = TextWhite
-                    )
-                }
+            // Progress header
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                StepIndicator(1, step >= 1)
                 Spacer(modifier = Modifier.width(8.dp))
-                Column {
-                    Text(
-                        text = "Driver Registration",
-                        color = TextWhite,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Black
-                    )
-                    Text(
-                        text = "Join SARATHI Emergency Network",
-                        color = TextBlue300,
-                        fontSize = 13.sp
-                    )
-                }
+                Divider(modifier = Modifier.width(40.dp).height(2.dp), color = if (step > 1) SuccessGreen else Color.White.copy(alpha = 0.2f))
+                Spacer(modifier = Modifier.width(8.dp))
+                StepIndicator(2, step >= 2)
             }
 
             Spacer(modifier = Modifier.height(24.dp))
+            
+            Text(
+                text = if (step == 1) "Create Account" else "Vehicle Details",
+                color = TextWhite,
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Black
+            )
+            Text(
+                text = if (step == 1) "Join the SARATHI emergency network" else "Register your emergency vehicle",
+                color = TextBlue300,
+                fontSize = 14.sp
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
 
             // Form Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.White.copy(alpha = 0.08f)
-                )
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.08f)),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
             ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    // Error
+                Column(modifier = Modifier.padding(24.dp)) {
                     if (error != null) {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(8.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = EmergencyRed.copy(alpha = 0.15f)
-                            )
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    Icons.Default.Error, null,
-                                    tint = TextRed400,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(error ?: "", color = TextRed300, fontSize = 12.sp)
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(error ?: "", color = EmergencyRed, fontSize = 12.sp, modifier = Modifier.padding(bottom = 12.dp))
                     }
 
-                    // Fields helper
-                    @Composable
-                    fun FormField(
-                        label: String,
-                        value: String,
-                        onValueChange: (String) -> Unit,
-                        icon: @Composable () -> Unit,
-                        keyboardType: KeyboardType = KeyboardType.Text,
-                        isPassword: Boolean = false
-                    ) {
-                        Text(label, color = TextWhite, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
-                        Spacer(modifier = Modifier.height(6.dp))
-                        OutlinedTextField(
-                            value = value,
-                            onValueChange = onValueChange,
-                            leadingIcon = icon,
-                            trailingIcon = if (isPassword) {
-                                {
-                                    IconButton(onClick = { showPassword = !showPassword }) {
-                                        Icon(
-                                            if (showPassword) Icons.Default.VisibilityOff
-                                            else Icons.Default.Visibility,
-                                            null, tint = TextBlue400,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                    }
-                                }
-                            } else null,
-                            visualTransformation = if (isPassword && !showPassword)
-                                PasswordVisualTransformation() else VisualTransformation.None,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = TextWhite,
-                                unfocusedTextColor = TextWhite,
-                                focusedBorderColor = PrimaryBlue,
-                                unfocusedBorderColor = PrimaryBlue.copy(alpha = 0.3f),
-                                focusedContainerColor = Color(0xFF0C1929).copy(alpha = 0.5f),
-                                unfocusedContainerColor = Color(0xFF0C1929).copy(alpha = 0.5f),
-                                cursorColor = TextBlue400
-                            ),
-                            shape = RoundedCornerShape(10.dp),
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = keyboardType,
-                                imeAction = ImeAction.Next
-                            ),
-                            keyboardActions = KeyboardActions(
-                                onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                            ),
-                            modifier = Modifier.fillMaxWidth()
+                    if (step == 1) {
+                        RegisterStepOne(
+                            fullName, { fullName = it },
+                            email, { email = it },
+                            phone, { phone = it },
+                            password, { password = it },
+                            focusManager
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
+                    } else {
+                        RegisterStepTwo(
+                            vehicleType, { vehicleType = it },
+                            vehicleNumber, { vehicleNumber = it },
+                            licenseNumber, { licenseNumber = it },
+                            focusManager
+                        )
                     }
 
-                    FormField("Full Name", fullName, { fullName = it },
-                        { Icon(Icons.Default.Person, null, tint = TextBlue400, modifier = Modifier.size(18.dp)) })
-                    FormField("Email", email, { email = it },
-                        { Icon(Icons.Default.Email, null, tint = TextBlue400, modifier = Modifier.size(18.dp)) },
-                        keyboardType = KeyboardType.Email)
-                    FormField("Phone Number", phone, { phone = it },
-                        { Icon(Icons.Default.Phone, null, tint = TextBlue400, modifier = Modifier.size(18.dp)) },
-                        keyboardType = KeyboardType.Phone)
-                    FormField("License Number", licenseNumber, { licenseNumber = it },
-                        { Icon(Icons.Default.Badge, null, tint = TextBlue400, modifier = Modifier.size(18.dp)) })
-                    FormField("Vehicle Number", vehicleNumber, { vehicleNumber = it },
-                        { Icon(Icons.Default.DirectionsCar, null, tint = TextBlue400, modifier = Modifier.size(18.dp)) })
-                    FormField("Password", password, { password = it },
-                        { Icon(Icons.Default.Lock, null, tint = TextBlue400, modifier = Modifier.size(18.dp)) },
-                        keyboardType = KeyboardType.Password, isPassword = true)
-                    FormField("Confirm Password", confirmPassword, { confirmPassword = it },
-                        { Icon(Icons.Default.Lock, null, tint = TextBlue400, modifier = Modifier.size(18.dp)) },
-                        keyboardType = KeyboardType.Password, isPassword = true)
-
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
 
                     GlowButton(
-                        text = if (isLoading) "Registering..." else "Register as Driver",
+                        text = if (step == 1) "NEXT" else if (isLoading) "REGISTERING..." else "COMPLETE SIGNUP",
                         onClick = {
-                            error = null
-                            if (fullName.isBlank() || email.isBlank() || phone.isBlank() ||
-                                licenseNumber.isBlank() || vehicleNumber.isBlank() || password.isBlank()
-                            ) {
-                                error = "Please fill all fields"
-                                return@GlowButton
-                            }
-                            if (password != confirmPassword) {
-                                error = "Passwords do not match"
-                                return@GlowButton
-                            }
-                            if (password.length < 6) {
-                                error = "Password must be at least 6 characters"
-                                return@GlowButton
-                            }
-                            isLoading = true
-                            scope.launch {
-                                try {
-                                    val response = api.driverRegister(
-                                        RegisterRequest(
-                                            fullName.trim(), email.trim(), phone.trim(),
-                                            licenseNumber.trim(), vehicleNumber.trim(), password
-                                        )
-                                    )
-                                    if (response.isSuccessful) {
-                                        val body = response.body()
-                                        if (body?.success == true && body.driver != null) {
-                                            sessionManager.saveDriverSession(body.driver!!)
+                            if (step == 1) {
+                                if (fullName.isBlank() || email.isBlank() || phone.isBlank() || password.isBlank()) {
+                                    error = "Please fill all fields"
+                                } else {
+                                    error = null
+                                    step = 2
+                                }
+                            } else {
+                                if (vehicleNumber.isBlank() || licenseNumber.isBlank()) {
+                                    error = "Please fill vehicle details"
+                                } else {
+                                    error = null
+                                    isLoading = true
+                                    scope.launch {
+                                        try {
+                                            val response = api.driverRegister(
+                                                RegisterRequest(fullName, email, phone, licenseNumber, vehicleNumber, password)
+                                            )
+                                            if (response.isSuccessful && response.body()?.success == true) {
+                                                response.body()?.driver?.let { sessionManager.saveDriverSession(it) }
+                                                onRegisterSuccess()
+                                            } else {
+                                                // Offline mock
+                                                saveOfflineSession(fullName, email, phone, licenseNumber, vehicleNumber, sessionManager)
+                                                onRegisterSuccess()
+                                            }
+                                        } catch (e: Exception) {
+                                            saveOfflineSession(fullName, email, phone, licenseNumber, vehicleNumber, sessionManager)
                                             onRegisterSuccess()
-                                        } else {
-                                            error = body?.error ?: "Registration failed"
+                                        } finally {
+                                            isLoading = false
                                         }
-                                    } else {
-                                        error = "Registration failed. Try again."
                                     }
-                                } catch (e: Exception) {
-                                    // Offline fallback — create local session
-                                    val offlineDriver = com.sarathi.emergency.data.models.Driver(
-                                        _id = "offline-${System.currentTimeMillis()}",
-                                        fullName = fullName.trim(),
-                                        email = email.trim(),
-                                        phone = phone.trim(),
-                                        licenseNumber = licenseNumber.trim(),
-                                        vehicleNumber = vehicleNumber.trim(),
-                                        isAvailable = true
-                                    )
-                                    sessionManager.saveDriverSession(offlineDriver)
-                                    onRegisterSuccess()
-                                } finally {
-                                    isLoading = false
                                 }
                             }
                         },
                         isLoading = isLoading,
-                        variant = GlowVariant.SUCCESS,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        variant = if (step == 1) GlowVariant.PRIMARY else GlowVariant.SUCCESS
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            TextButton(onClick = onBack) {
-                Text(
-                    text = "Already have an account? Login",
-                    color = TextBlue400,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
-                )
+            TextButton(onClick = { if (step == 2) step = 1 else onBack() }) {
+                Text(if (step == 2) "Back to basic info" else "Already have an account? Login", color = TextBlue400, fontWeight = FontWeight.Bold)
             }
-
-            Spacer(modifier = Modifier.height(32.dp))
         }
     }
+}
+
+@Composable
+private fun StepIndicator(num: Int, active: Boolean) {
+    Box(
+        modifier = Modifier
+            .size(32.dp)
+            .clip(CircleShape)
+            .background(if (active) SuccessGreen else Color.White.copy(alpha = 0.1f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(num.toString(), color = if (active) Color.Black else TextWhite, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+private fun RegisterStepOne(
+    name: String, onNameChange: (String) -> Unit,
+    email: String, onEmailChange: (String) -> Unit,
+    phone: String, onPhoneChange: (String) -> Unit,
+    pass: String, onPassChange: (String) -> Unit,
+    focusManager: FocusManager
+) {
+    Column {
+        OutlinedTextField(
+            value = name, onValueChange = onNameChange,
+            label = { Text("Full Name", color = TextWhite70) },
+            leadingIcon = { Icon(Icons.Default.Person, null, tint = TextBlue400) },
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(focusedTextColor = TextWhite, unfocusedTextColor = TextWhite, focusedBorderColor = PrimaryBlue)
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        OutlinedTextField(
+            value = email, onValueChange = onEmailChange,
+            label = { Text("Email", color = TextWhite70) },
+            leadingIcon = { Icon(Icons.Default.Email, null, tint = TextBlue400) },
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(focusedTextColor = TextWhite, unfocusedTextColor = TextWhite, focusedBorderColor = PrimaryBlue)
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        OutlinedTextField(
+            value = phone, onValueChange = onPhoneChange,
+            label = { Text("Phone Number", color = TextWhite70) },
+            leadingIcon = { Icon(Icons.Default.Phone, null, tint = TextBlue400) },
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(focusedTextColor = TextWhite, unfocusedTextColor = TextWhite, focusedBorderColor = PrimaryBlue)
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        OutlinedTextField(
+            value = pass, onValueChange = onPassChange,
+            label = { Text("Password", color = TextWhite70) },
+            leadingIcon = { Icon(Icons.Default.Lock, null, tint = TextBlue400) },
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(focusedTextColor = TextWhite, unfocusedTextColor = TextWhite, focusedBorderColor = PrimaryBlue),
+            visualTransformation = PasswordVisualTransformation()
+        )
+    }
+}
+
+@Composable
+private fun RegisterStepTwo(
+    type: String, onTypeChange: (String) -> Unit,
+    vNum: String, onVNumChange: (String) -> Unit,
+    lNum: String, onLNumChange: (String) -> Unit,
+    focusManager: FocusManager
+) {
+    Column {
+        Text("Vehicle Type", color = TextWhite70, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            VehicleTypeChip("ambulance", Icons.Default.MedicalServices, type == "ambulance") { onTypeChange("ambulance") }
+            VehicleTypeChip("police", Icons.Default.Security, type == "police") { onTypeChange("police") }
+            VehicleTypeChip("fire", Icons.Default.LocalFireDepartment, type == "fire") { onTypeChange("fire") }
+        }
+        Spacer(modifier = Modifier.height(20.dp))
+        OutlinedTextField(
+            value = vNum, onValueChange = onVNumChange,
+            label = { Text("Vehicle Number", color = TextWhite70) },
+            leadingIcon = { Icon(Icons.Default.DirectionsCar, null, tint = TextBlue400) },
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(focusedTextColor = TextWhite, unfocusedTextColor = TextWhite, focusedBorderColor = PrimaryBlue)
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        OutlinedTextField(
+            value = lNum, onValueChange = onLNumChange,
+            label = { Text("License Number", color = TextWhite70) },
+            leadingIcon = { Icon(Icons.Default.Badge, null, tint = TextBlue400) },
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(focusedTextColor = TextWhite, unfocusedTextColor = TextWhite, focusedBorderColor = PrimaryBlue)
+        )
+    }
+}
+
+@Composable
+private fun RowScope.VehicleTypeChip(id: String, icon: androidx.compose.ui.graphics.vector.ImageVector, selected: Boolean, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier.weight(1f).clickable { onClick() },
+        colors = CardDefaults.cardColors(containerColor = if (selected) PrimaryBlue.copy(alpha = 0.2f) else Color.White.copy(alpha = 0.05f)),
+        border = androidx.compose.foundation.BorderStroke(2.dp, if (selected) PrimaryBlue else Color.Transparent),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(icon, null, tint = if (selected) PrimaryBlue else TextWhite70, modifier = Modifier.size(24.dp))
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(id.uppercase(), color = if (selected) PrimaryBlue else TextWhite70, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+private fun saveOfflineSession(name: String, email: String, phone: String, lNum: String, vNum: String, sessionManager: SessionManager) {
+    sessionManager.saveDriverSession(com.sarathi.emergency.data.models.Driver(
+        _id = "offline-${System.currentTimeMillis()}",
+        fullName = name, email = email, phone = phone, licenseNumber = lNum, vehicleNumber = vNum, isAvailable = true
+    ))
 }

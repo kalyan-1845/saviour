@@ -1,7 +1,5 @@
 package com.sarathi.emergency.ui.screens
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -29,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import com.sarathi.emergency.ui.components.GlowButton
 import com.sarathi.emergency.ui.components.GlowVariant
 import com.sarathi.emergency.ui.theme.*
+import com.sarathi.emergency.util.ExternalActionHandler
 
 data class RealHospital(
     val id: String,
@@ -54,6 +53,7 @@ data class RealHospital(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HospitalSelectionScreen(
+    api: com.sarathi.emergency.data.api.SarathiApi,
     onStartNavigation: () -> Unit,
     onBack: () -> Unit
 ) {
@@ -61,147 +61,58 @@ fun HospitalSelectionScreen(
     var searchQuery by remember { mutableStateOf("") }
     var selectedHospitalId by remember { mutableStateOf<String?>(null) }
     var filterSpecialty by remember { mutableStateOf("") }
+    var hospitalList by remember { mutableStateOf(emptyList<com.sarathi.emergency.data.models.Hospital>()) }
+    var isLoading by remember { mutableStateOf(false) }
 
-    // ── REAL Hyderabad Hospitals ──
-    val hospitals = remember {
-        listOf(
-            RealHospital(
-                id = "1", name = "Apollo Hospitals", area = "Jubilee Hills",
-                address = "Film Nagar, Jubilee Hills", pincode = "500033",
-                phone = "040-23607777", emergencyPhone = "040-23601066",
-                specialties = listOf("Cardiac", "Trauma", "Neurology", "Oncology", "Pediatric"),
-                bedsAvailable = 12, totalBeds = 550, rating = 4.8,
-                type = "Private", ambulanceCount = 8, distance = 3.2
-            ),
-            RealHospital(
-                id = "2", name = "NIMS Hospital", area = "Punjagutta",
-                address = "Punjagutta, Beside Niloufer Hospital", pincode = "500082",
-                phone = "040-23390536", emergencyPhone = "040-23390536",
-                specialties = listOf("Trauma", "Burns", "Neurosurgery", "Cardiac", "General"),
-                bedsAvailable = 45, totalBeds = 1500, rating = 4.5,
-                type = "Government", ambulanceCount = 12, distance = 4.8
-            ),
-            RealHospital(
-                id = "3", name = "KIMS Hospital", area = "Secunderabad",
-                address = "1-8-31/1, Minister Road, Secunderabad", pincode = "500003",
-                phone = "040-44885000", emergencyPhone = "040-44885100",
-                specialties = listOf("Cardiac", "Stroke", "Neurology", "Orthopedics"),
-                bedsAvailable = 8, totalBeds = 400, rating = 4.7,
-                type = "Private", ambulanceCount = 6, distance = 5.1
-            ),
-            RealHospital(
-                id = "4", name = "Yashoda Hospitals", area = "Malakpet",
-                address = "Nalgonda X Roads, Malakpet", pincode = "500036",
-                phone = "040-67777777", emergencyPhone = "040-67777000",
-                specialties = listOf("Cardiac", "Trauma", "Nephrology", "Gastro"),
-                bedsAvailable = 15, totalBeds = 500, rating = 4.6,
-                type = "Private", ambulanceCount = 5, distance = 2.5
-            ),
-            RealHospital(
-                id = "5", name = "Care Hospitals", area = "Banjara Hills",
-                address = "Road No. 1, Banjara Hills", pincode = "500034",
-                phone = "040-30418888", emergencyPhone = "040-30418800",
-                specialties = listOf("Cardiac", "Neurology", "Pediatric", "Oncology"),
-                bedsAvailable = 10, totalBeds = 435, rating = 4.5,
-                type = "Private", ambulanceCount = 6, distance = 3.8
-            ),
-            RealHospital(
-                id = "6", name = "Continental Hospitals", area = "Gachibowli",
-                address = "IT Park Road, Nanakramguda, Gachibowli", pincode = "500032",
-                phone = "040-67111111", emergencyPhone = "040-67111000",
-                specialties = listOf("Trauma", "Stroke", "Burns", "Orthopedics", "Neuro"),
-                bedsAvailable = 20, totalBeds = 750, rating = 4.4,
-                type = "Private", ambulanceCount = 8, distance = 6.2
-            ),
-            RealHospital(
-                id = "7", name = "Citizens Hospital", area = "Nallagandla",
-                address = "Serilingampally, Nallagandla", pincode = "500019",
-                phone = "040-67111111", emergencyPhone = "040-67111111",
-                specialties = listOf("General", "Pediatric", "Orthopedics", "Cardiac"),
-                bedsAvailable = 6, totalBeds = 200, rating = 4.3,
-                type = "Private", ambulanceCount = 3, distance = 7.5
-            ),
-            RealHospital(
-                id = "8", name = "Osmania General Hospital", area = "Afzalgunj",
-                address = "Afzalgunj, Near High Court", pincode = "500012",
-                phone = "040-24600146", emergencyPhone = "040-24600146",
-                specialties = listOf("Trauma", "General", "Burns", "Orthopedics"),
-                bedsAvailable = 55, totalBeds = 1168, rating = 4.0,
-                type = "Government", ambulanceCount = 10, distance = 5.5
-            ),
-            RealHospital(
-                id = "9", name = "Medicover Hospitals", area = "Madhapur",
-                address = "Hitech City, Madhapur", pincode = "500081",
-                phone = "040-68334455", emergencyPhone = "040-68334400",
-                specialties = listOf("Cardiac", "Neurology", "Gastro", "Oncology"),
-                bedsAvailable = 9, totalBeds = 350, rating = 4.4,
-                type = "Private", ambulanceCount = 4, distance = 4.5
-            ),
-            RealHospital(
-                id = "10", name = "Gandhi Hospital", area = "Musheerabad",
-                address = "Padmarao Nagar, Musheerabad", pincode = "500003",
-                phone = "040-27505566", emergencyPhone = "040-27505566",
-                specialties = listOf("General", "Trauma", "Burns", "Pediatric"),
-                bedsAvailable = 60, totalBeds = 1200, rating = 3.9,
-                type = "Government", ambulanceCount = 8, distance = 6.0
-            ),
-            RealHospital(
-                id = "11", name = "AIG Hospitals", area = "Gachibowli",
-                address = "Survey No. 136, Gachibowli, Mindspace Road", pincode = "500032",
-                phone = "040-49191919", emergencyPhone = "040-49191900",
-                specialties = listOf("Gastro", "Hepatology", "Liver Transplant", "Oncology"),
-                bedsAvailable = 7, totalBeds = 330, rating = 4.6,
-                type = "Private", ambulanceCount = 4, distance = 5.8
-            ),
-            RealHospital(
-                id = "12", name = "Sunshine Hospitals", area = "Secunderabad",
-                address = "PG Road, Secunderabad", pincode = "500003",
-                phone = "040-44550000", emergencyPhone = "040-44550100",
-                specialties = listOf("Orthopedics", "Trauma", "Joint Replacement", "Spine"),
-                bedsAvailable = 11, totalBeds = 280, rating = 4.5,
-                type = "Private", ambulanceCount = 4, distance = 4.9
-            ),
-            RealHospital(
-                id = "13", name = "Archana Hospital", area = "Miyapur",
-                address = "Allwyn Colony, Miyapur", pincode = "500049",
-                phone = "040-23053555", emergencyPhone = "040-23053555",
-                specialties = listOf("General", "Pediatric", "Gynecology"),
-                bedsAvailable = 5, totalBeds = 100, rating = 4.1,
-                type = "Private", ambulanceCount = 2, distance = 8.2
-            ),
-            RealHospital(
-                id = "14", name = "Himagiri Hospital", area = "Gachibowli",
-                address = "Road No. 2, Gachibowli", pincode = "500032",
-                phone = "040-29881214", emergencyPhone = "040-29881214",
-                specialties = listOf("General", "Orthopedics", "ENT"),
-                bedsAvailable = 4, totalBeds = 80, rating = 4.0,
-                type = "Private", ambulanceCount = 1, distance = 6.0
-            ),
-            RealHospital(
-                id = "15", name = "National Institute of Mental Health",
-                area = "Rajendranagar",
-                address = "Rajendranagar, Hyderabad", pincode = "500032",
-                phone = "040-24110024", emergencyPhone = "040-24110024",
-                specialties = listOf("Psychiatry", "Neurology", "Rehabilitation"),
-                bedsAvailable = 30, totalBeds = 600, rating = 4.2,
-                type = "Government", ambulanceCount = 3, distance = 7.0
-            )
-        )
+    // FETCH HOSPITALS FROM BACKEND
+    LaunchedEffect(Unit) {
+        try {
+            isLoading = true
+            val response = api.getHospitals(latitude = 17.4426, longitude = 78.5006) // Dummy coords for now
+            if (response.isSuccessful && response.body()?.success == true) {
+                hospitalList = response.body()?.hospitals ?: emptyList()
+            }
+        } catch (_: Exception) {
+        } finally {
+            isLoading = false
+        }
     }
 
-    val allSpecialties = remember {
+    // Map backend model to UI model
+    val hospitals = remember(hospitalList) {
+        hospitalList.map { h ->
+            RealHospital(
+                id = h._id,
+                name = h.name,
+                address = h.address,
+                area = h.city,
+                city = h.city,
+                pincode = "N/A",
+                phone = h.phone,
+                emergencyPhone = h.phone,
+                specialties = h.specialties,
+                bedsAvailable = h.bedsAvailable,
+                totalBeds = h.totalBeds,
+                rating = h.rating ?: 4.0,
+                type = h.type.replaceFirstChar { it.uppercase() },
+                distance = h.distance ?: 0.0,
+                ambulanceCount = h.ambulanceCount,
+                isEmergencyAvailable = h.isEmergencyAvailable
+            )
+        }
+    }
+
+    val allSpecialties = remember(hospitals) {
         hospitals.flatMap { it.specialties }.distinct().sorted()
     }
 
     // Filter by search + specialty
-    val filteredHospitals = remember(searchQuery, filterSpecialty) {
+    val filteredHospitals = remember(searchQuery, filterSpecialty, hospitals) {
         hospitals.filter { h ->
             val matchesSearch = searchQuery.isBlank() ||
                     h.name.contains(searchQuery, ignoreCase = true) ||
                     h.area.contains(searchQuery, ignoreCase = true) ||
-                    h.address.contains(searchQuery, ignoreCase = true) ||
-                    h.phone.contains(searchQuery) ||
-                    h.pincode.contains(searchQuery)
+                    h.address.contains(searchQuery, ignoreCase = true)
             val matchesSpecialty = filterSpecialty.isBlank() || filterSpecialty in h.specialties
             matchesSearch && matchesSpecialty
         }.sortedBy { it.distance }
@@ -314,8 +225,11 @@ fun HospitalSelectionScreen(
                         isSelected = selectedHospitalId == hospital.id,
                         onClick = { selectedHospitalId = hospital.id },
                         onCall = {
-                            val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${hospital.emergencyPhone.ifBlank { hospital.phone }}"))
-                            context.startActivity(intent)
+                            ExternalActionHandler.dial(
+                                context = context,
+                                phone = hospital.emergencyPhone.ifBlank { hospital.phone },
+                                blockedMessage = "External dialer disabled in app mode"
+                            )
                         }
                     )
                 }
@@ -391,11 +305,11 @@ fun HospitalSelectionScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable {
-                                            val intent = Intent(
-                                                Intent.ACTION_DIAL,
-                                                Uri.parse("tel:${hospital.emergencyPhone.ifBlank { hospital.phone }}")
+                                            ExternalActionHandler.dial(
+                                                context = context,
+                                                phone = hospital.emergencyPhone.ifBlank { hospital.phone },
+                                                blockedMessage = "External dialer disabled in app mode"
                                             )
-                                            context.startActivity(intent)
                                         }
                                         .padding(12.dp),
                                     verticalAlignment = Alignment.CenterVertically

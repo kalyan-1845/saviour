@@ -15,6 +15,9 @@ class SessionManager(context: Context) {
         private const val KEY_DRIVER = "current_driver"
         private const val KEY_IS_LOGGED_IN = "is_logged_in"
         private const val KEY_DRIVER_ID = "driver_id"
+        private const val KEY_AUTH_TOKEN = "auth_token"
+        private const val KEY_HOSPITAL_ID = "hospital_id"
+        private const val KEY_POLICE_STATION_ID = "police_station_id"
         private const val KEY_SIMULATED_SOS_ID = "sim_sos_id"
         private const val KEY_SIMULATED_SOS_TYPE = "sim_sos_type"
         private const val KEY_SIMULATED_SOS_STATUS = "sim_sos_status"
@@ -29,6 +32,32 @@ class SessionManager(context: Context) {
             .putBoolean(KEY_IS_LOGGED_IN, true)
             .putString(KEY_DRIVER_ID, driver._id)
             .apply()
+    }
+
+    fun saveAuthToken(token: String?) {
+        prefs.edit()
+            .putString(KEY_AUTH_TOKEN, token ?: "")
+            .apply()
+    }
+
+    fun getAuthToken(): String {
+        return prefs.getString(KEY_AUTH_TOKEN, "") ?: ""
+    }
+
+    fun saveHospitalId(hospitalId: String) {
+        prefs.edit().putString(KEY_HOSPITAL_ID, hospitalId).apply()
+    }
+
+    fun getHospitalId(): String {
+        return prefs.getString(KEY_HOSPITAL_ID, "") ?: ""
+    }
+
+    fun savePoliceStationId(stationId: String) {
+        prefs.edit().putString(KEY_POLICE_STATION_ID, stationId).apply()
+    }
+
+    fun getPoliceStationId(): String {
+        return prefs.getString(KEY_POLICE_STATION_ID, "") ?: ""
     }
 
     fun getDriver(): Driver? {

@@ -1,6 +1,7 @@
 package com.sarathi.emergency.ui.screens
 
 import android.Manifest
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
@@ -62,6 +63,7 @@ fun DriverDashboardScreen(
     onNavigateToActiveRoute: () -> Unit,
     onLogout: () -> Unit
 ) {
+    val tag = "DriverDashboard"
     val context = LocalContext.current
     val locationHelper = remember { LocationHelper(context) }
     val scope = rememberCoroutineScope()
@@ -82,19 +84,30 @@ fun DriverDashboardScreen(
 
     // Setup GPS
     LaunchedEffect(locationPermission.status.isGranted) {
-        if (locationPermission.status.isGranted) {
-            locationHelper.getLastLocation { loc ->
-                if (loc != null) {
-                    latitude = loc.latitude
-                    longitude = loc.longitude
-                    hasLocation = true
-                }
-            }
-            locationHelper.requestLocationUpdates { loc ->
+        if (!locationPermission.status.isGranted) {
+            locationPermission.launchPermissionRequest()
+            return@LaunchedEffect
+        }
+
+        locationHelper.getLastLocation { loc ->
+            if (loc != null) {
                 latitude = loc.latitude
                 longitude = loc.longitude
                 hasLocation = true
             }
+        }
+    }
+
+    DisposableEffect(locationPermission.status.isGranted) {
+        if (!locationPermission.status.isGranted) {
+            onDispose { }
+        } else {
+            val stopUpdates = locationHelper.requestLocationUpdates { loc ->
+                latitude = loc.latitude
+                longitude = loc.longitude
+                hasLocation = true
+            }
+            onDispose { stopUpdates() }
         }
     }
 
@@ -104,9 +117,13 @@ fun DriverDashboardScreen(
         while (true) {
             try {
                 isCheckingTrip = true
-                val response = api.getAssignedTrip(driverId)
+                val response = api.getAssignedTrip(
+                    driverId = driverId,
+                    email = driverSession?.email
+                )
                 if (response.isSuccessful && response.body()?.success == true && response.body()?.trip != null) {
                     activeTrip = response.body()?.trip
+                    Log.d(tag, "Assigned trip synced: ${activeTrip?.id}")
                 } else {
                     // Check for SIMULATED SOS on the same device (offline testing)
                     val simulatedId = sessionManager.getSimulatedSOS()
@@ -125,7 +142,9 @@ fun DriverDashboardScreen(
                         activeTrip = null
                     }
                 }
-            } catch (_: Exception) {} finally {
+            } catch (error: Exception) {
+                Log.e(tag, "Failed to sync assigned trip", error)
+            } finally {
                 isCheckingTrip = false
             }
             delay(10000)
@@ -244,22 +263,34 @@ fun DriverDashboardScreen(
             }
 
             if (selectedEmergency != null) {
-                val selected = emergencies.find { it.id == selectedEmergency }!!
+                val selected = emergencies.find { it.id == selectedEmergency }
                 Spacer(modifier = Modifier.height(12.dp))
                 GlowButton(
                     text = if (isLoading) "Initializing Dispatch..." else "Confirm Response Protocol →",
                     onClick = {
+                        if (selected == null) {
+                            error = "Please select an emergency type"
+                            return@GlowButton
+                        }
                         if (!hasLocation) { error = "GPS required"; return@GlowButton }
                         isLoading = true
                         scope.launch {
                             try {
-                                api.selectEmergency(EmergencySelectRequest(driverId = sessionManager.getDriverId(), emergencyType = selected.apiType, latitude = latitude, longitude = longitude))
+                                api.selectEmergency(
+                                    EmergencySelectRequest(
+                                        driverId = sessionManager.getDriverId(),
+                                        emergencyType = selected.apiType,
+                                        latitude = latitude,
+                                        longitude = longitude
+                                    )
+                                )
                                 // START BACKGROUND TRACK SERVICE
                                 context.startService(Intent(context, BackgroundLocationService::class.java))
                                 onNavigateToHospitalSelection()
-                            } catch (_: Exception) { 
+                            } catch (error: Exception) {
+                                Log.e(tag, "Emergency select failed, moving to fallback", error)
                                 context.startService(Intent(context, BackgroundLocationService::class.java))
-                                onNavigateToHospitalSelection() 
+                                onNavigateToHospitalSelection()
                             } finally { isLoading = false }
                         }
                     },
@@ -267,7 +298,7 @@ fun DriverDashboardScreen(
                 )
             }
 
-            if (error != null) { Text(error!!, color = EmergencyOrange, modifier = Modifier.padding(top = 12.dp)) }
+            if (error != null) { Text(error.orEmpty(), color = EmergencyOrange, modifier = Modifier.padding(top = 12.dp)) }
             Spacer(modifier = Modifier.height(32.dp))
         }
     }

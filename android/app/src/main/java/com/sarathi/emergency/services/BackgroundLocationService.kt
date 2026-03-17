@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.sarathi.emergency.MainActivity
 import com.sarathi.emergency.R
@@ -18,6 +19,9 @@ import kotlinx.coroutines.*
  * Runs in the foreground with a high-priority notification to ensure reliability.
  */
 class BackgroundLocationService : Service() {
+    companion object {
+        private const val TAG = "BackgroundLocationSvc"
+    }
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private lateinit var locationHelper: LocationHelper
@@ -35,6 +39,7 @@ class BackgroundLocationService : Service() {
         if (driverId.isNotEmpty()) {
             startTracking(driverId, app)
         } else {
+            Log.w(TAG, "Missing driverId, stopping service")
             stopSelf()
         }
 
@@ -45,15 +50,20 @@ class BackgroundLocationService : Service() {
         stopUpdates = locationHelper.requestLocationUpdates { location ->
             serviceScope.launch {
                 try {
-                    app.api.updateDriverLocation(
+                    val response = app.api.updateDriverLocation(
                         DriverLocationRequest(
                             driverId = driverId,
                             latitude = location.latitude,
                             longitude = location.longitude
                         )
                     )
+                    if (!response.isSuccessful) {
+                        Log.w(TAG, "Location update failed: ${response.code()}")
+                    } else {
+                        Log.d(TAG, "Location updated: ${location.latitude},${location.longitude}")
+                    }
                 } catch (e: Exception) {
-                    // Fail silently in background, continue tracking
+                    Log.e(TAG, "Location update exception", e)
                 }
             }
         }
@@ -81,5 +91,6 @@ class BackgroundLocationService : Service() {
         super.onDestroy()
         stopUpdates?.invoke()
         serviceScope.cancel()
+        Log.i(TAG, "Background tracking stopped")
     }
 }

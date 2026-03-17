@@ -1,5 +1,7 @@
 package com.sarathi.emergency.data.models
 
+import com.google.gson.annotations.SerializedName
+
 // ─── Auth Requests ───
 data class LoginRequest(
     val email: String,
@@ -20,6 +22,7 @@ data class LoginResponse(
     val success: Boolean = false,
     val message: String = "",
     val driver: Driver? = null,
+    val token: String? = null,
     val error: String? = null
 )
 
@@ -27,6 +30,7 @@ data class RegisterResponse(
     val success: Boolean = false,
     val message: String = "",
     val driver: Driver? = null,
+    val token: String? = null,
     val error: String? = null
 )
 
@@ -99,6 +103,8 @@ data class TrackDriver(
 )
 
 data class TrackDriverLocation(
+    val latitude: Double? = null,
+    val longitude: Double? = null,
     val mapUrl: String? = null
 )
 
@@ -190,12 +196,115 @@ data class NotifyLive(
     val etaMinutes: Int? = null
 )
 
+// ─── Police Alerts ───
+data class PoliceAlertResponse(
+    val success: Boolean = false,
+    val alerts: List<PoliceAlert> = emptyList(),
+    val error: String? = null
+)
+
+data class PoliceAlert(
+    val id: String,
+    val status: String,
+    val emergencyType: String,
+    val etaMinutes: Int? = null,
+    val policeAlertMessage: String? = null,
+    val createdAt: String,
+    val hospitalName: String? = null,
+    val user: AlertUser? = null,
+    val driver: AlertDriver? = null
+)
+
+data class AlertUser(
+    val fullName: String,
+    val phone: String
+)
+
+data class AlertDriver(
+    val fullName: String,
+    val phone: String,
+    val vehicleNumber: String,
+    @SerializedName(value = "liveMapUrl", alternate = ["mapUrl"])
+    val liveMapUrl: String? = null
+)
+
+// ─── Hospital Cases ───
+data class HospitalCaseResponse(
+    val success: Boolean = false,
+    val cases: List<HospitalCase> = emptyList(),
+    val error: String? = null
+)
+
+data class HospitalCase(
+    val id: String,
+    val emergencyType: String,
+    val status: String,
+    val hospitalCaseStatus: String,
+    val etaMinutes: Int? = null,
+    val createdAt: String,
+    val user: AlertUser? = null,
+    val driver: AlertDriver? = null,
+    val pickupMapUrl: String? = null,
+    val hospitalMapUrl: String? = null
+)
+
+data class UpdateCaseStatusRequest(
+    val tripId: String,
+    val hospitalCaseStatus: String
+)
+
+data class UpdateCaseStatusResponse(
+    val success: Boolean = false,
+    val trip: ShortTripInfo? = null,
+    val error: String? = null
+)
+
+data class ShortTripInfo(
+    val id: String,
+    val hospitalCaseStatus: String
+)
+
+// ─── Groq AI Route Analysis ───
+data class GroqRequest(
+    val origin: String,
+    val destination: String,
+    val emergencyType: String? = null,
+    val trafficData: Any? = null
+)
+
+data class GroqResponse(
+    val success: Boolean = false,
+    val analysis: String = "",
+    val estimatedTime: Int = 0,
+    val distance: String = "",
+    val trafficLevel: String = "",
+    val error: String? = null
+)
+
 // ─── Location Update ───
 data class DriverLocationRequest(
     val driverId: String,
     val latitude: Double,
     val longitude: Double,
     val status: String = "active"
+)
+
+data class DriverUpdateRequest(
+    val driverId: String,
+    val tripId: String? = null,
+    val driverEmail: String? = null,
+    val status: String? = null,
+    val stage: String? = null,
+    val emergencyType: String? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null
+)
+
+data class DriverUpdateResponse(
+    val success: Boolean = false,
+    val message: String? = null,
+    val trip: AssignedTrip? = null,
+    val error: String? = null
 )
 
 data class GenericResponse(

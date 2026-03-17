@@ -29,8 +29,10 @@ fun NavGraph(api: SarathiApi, sessionManager: SessionManager) {
     // Shared state for police/hospital dashboards
     var selectedStationName by remember { mutableStateOf("") }
     var selectedStationArea by remember { mutableStateOf("") }
+    var selectedStationId by remember { mutableStateOf("") }
     var selectedHospName by remember { mutableStateOf("") }
     var selectedHospArea by remember { mutableStateOf("") }
+    var selectedHospId by remember { mutableStateOf("") }
 
     NavHost(
         navController = navController,
@@ -130,6 +132,7 @@ fun NavGraph(api: SarathiApi, sessionManager: SessionManager) {
 
         composable(Routes.HOSPITAL_SELECTION) {
             HospitalSelectionScreen(
+                api = api,
                 onStartNavigation = {
                     navController.navigate(Routes.ACTIVE_ROUTE) {
                         popUpTo(Routes.HOSPITAL_SELECTION) { inclusive = true }
@@ -156,8 +159,10 @@ fun NavGraph(api: SarathiApi, sessionManager: SessionManager) {
         composable(Routes.POLICE_LOGIN) {
             PoliceLoginScreen(
                 onLoginSuccess = { station ->
+                    selectedStationId = station.id
                     selectedStationName = station.name
                     selectedStationArea = station.area
+                    sessionManager.savePoliceStationId(station.id)
                     navController.navigate(Routes.POLICE_DASHBOARD) {
                         popUpTo(Routes.POLICE_LOGIN) { inclusive = true }
                     }
@@ -172,8 +177,10 @@ fun NavGraph(api: SarathiApi, sessionManager: SessionManager) {
 
         composable(Routes.POLICE_DASHBOARD) {
             PoliceDashboardScreen(
+                stationId = selectedStationId.ifEmpty { sessionManager.getPoliceStationId() },
                 stationName = selectedStationName.ifEmpty { "Hyderabad Central" },
                 stationArea = selectedStationArea.ifEmpty { "Abids" },
+                api = api,
                 sessionManager = sessionManager,
                 onLogout = {
                     navController.navigate(Routes.SPLASH) {
@@ -187,8 +194,10 @@ fun NavGraph(api: SarathiApi, sessionManager: SessionManager) {
         composable(Routes.HOSPITAL_LOGIN) {
             HospitalLoginScreen(
                 onLoginSuccess = { hospital ->
+                    selectedHospId = hospital.id
                     selectedHospName = hospital.name
                     selectedHospArea = hospital.area
+                    sessionManager.saveHospitalId(hospital.id)
                     navController.navigate(Routes.HOSPITAL_DASHBOARD) {
                         popUpTo(Routes.HOSPITAL_LOGIN) { inclusive = true }
                     }
@@ -203,6 +212,7 @@ fun NavGraph(api: SarathiApi, sessionManager: SessionManager) {
 
         composable(Routes.HOSPITAL_DASHBOARD) {
             HospitalDashboardScreen(
+                hospitalId = selectedHospId.ifEmpty { sessionManager.getHospitalId() },
                 hospitalName = selectedHospName.ifEmpty { "Apollo" },
                 hospitalArea = selectedHospArea.ifEmpty { "Jubilee Hills" },
                 sessionManager = sessionManager,

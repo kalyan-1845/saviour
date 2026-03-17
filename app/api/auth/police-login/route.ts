@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import PoliceStation from '@/models/PoliceStation';
+import { signJwt } from '@/lib/jwt';
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,8 +24,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid police station phone verification.' }, { status: 401 });
     }
 
+    const token = signJwt({
+      sub: String(station._id),
+      role: 'police',
+      stationId: String(station._id),
+    });
+
     return NextResponse.json({
       success: true,
+      token,
       station: {
         id: String(station._id),
         name: station.name,

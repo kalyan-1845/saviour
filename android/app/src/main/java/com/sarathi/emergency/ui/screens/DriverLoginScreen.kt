@@ -1,6 +1,7 @@
 package com.sarathi.emergency.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -34,6 +35,7 @@ import com.sarathi.emergency.data.models.LoginRequest
 import com.sarathi.emergency.ui.components.GlowButton
 import com.sarathi.emergency.ui.components.GlowVariant
 import com.sarathi.emergency.ui.theme.*
+import android.util.Log
 import kotlinx.coroutines.launch
 
 @Composable
@@ -44,12 +46,12 @@ fun DriverLoginScreen(
     onRegister: () -> Unit,
     onBack: () -> Unit
 ) {
+    val tag = "DriverLoginScreen"
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-    var isOfflineLogin by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
 
@@ -65,224 +67,124 @@ fun DriverLoginScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(24.dp),
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(48.dp))
 
-            // Logo
+            // Logo Branding
             Box(
                 modifier = Modifier
-                    .size(72.dp)
+                    .size(100.dp)
                     .clip(CircleShape)
-                    .background(
-                        Brush.linearGradient(listOf(PrimaryBlue, PrimaryPurple))
-                    ),
+                    .background(Color.White.copy(alpha = 0.1f))
+                    .border(2.dp, Color.White.copy(alpha = 0.2f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "S",
-                    color = Color.White,
-                    fontSize = 36.sp,
-                    fontWeight = FontWeight.Black
+                Icon(
+                    Icons.Default.Emergency,
+                    contentDescription = "Logo",
+                    tint = EmergencyRed,
+                    modifier = Modifier.size(50.dp)
                 )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
+            
             Text(
                 text = "SARATHI",
                 color = TextWhite,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Black
+                fontSize = 32.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 2.sp
             )
             Text(
-                text = "Driver Portal Login",
+                text = "Emergency Vehicle Network",
                 color = TextBlue300,
-                fontSize = 14.sp
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(48.dp))
 
-            // Form Card
+            // Login Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = Color.White.copy(alpha = 0.08f)
                 ),
-                border = CardDefaults.outlinedCardBorder().copy(
-                    width = 2.dp,
-                    brush = Brush.linearGradient(
-                        listOf(PrimaryBlue.copy(alpha = 0.5f), PrimaryPurple.copy(alpha = 0.3f))
-                    )
-                )
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
             ) {
                 Column(modifier = Modifier.padding(24.dp)) {
-                    // Error
-                    if (error != null) {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(8.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = EmergencyRed.copy(alpha = 0.15f)
-                            )
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Error,
-                                    contentDescription = "Error",
-                                    tint = TextRed400,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = error ?: "",
-                                    color = TextRed300,
-                                    fontSize = 13.sp
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(16.dp))
-                    }
-
-                    // Offline Login notice
-                    if (isOfflineLogin) {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(8.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = EmergencyOrange.copy(alpha = 0.15f)
-                            )
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.WifiOff,
-                                    contentDescription = null,
-                                    tint = EmergencyOrange,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "Logged in offline — some features limited",
-                                    color = EmergencyOrange,
-                                    fontSize = 12.sp
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(16.dp))
-                    }
-
-                    // Email
                     Text(
-                        text = "Email Address",
-                        color = TextWhite,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 13.sp
+                        text = "Login to Account",
+                        color = Color.White,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    if (error != null) {
+                        Text(
+                            text = error ?: "",
+                            color = EmergencyRed,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(bottom = 12.dp)
+                        )
+                    }
+
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it },
-                        placeholder = { Text("prsnlkalyan@gmail.com", color = TextWhite50) },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Default.Person,
-                                contentDescription = null,
-                                tint = TextBlue400,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        },
+                        label = { Text("Email", color = TextWhite70) },
+                        leadingIcon = { Icon(Icons.Default.Email, null, tint = TextBlue400) },
+                        modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = TextWhite,
                             unfocusedTextColor = TextWhite,
                             focusedBorderColor = PrimaryBlue,
-                            unfocusedBorderColor = PrimaryBlue.copy(alpha = 0.3f),
-                            focusedContainerColor = Color(0xFF0C1929).copy(alpha = 0.5f),
-                            unfocusedContainerColor = Color(0xFF0C1929).copy(alpha = 0.5f),
-                            cursorColor = TextBlue400
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.2f)
                         ),
-                        shape = RoundedCornerShape(10.dp),
                         singleLine = true,
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Email,
-                            imeAction = ImeAction.Next
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                        ),
-                        modifier = Modifier.fillMaxWidth()
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Password
-                    Text(
-                        text = "Password",
-                        color = TextWhite,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 13.sp
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
-                        placeholder = { Text("••••••••", color = TextWhite50) },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Default.Lock,
-                                contentDescription = null,
-                                tint = TextBlue400,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        },
+                        label = { Text("Password", color = TextWhite70) },
+                        leadingIcon = { Icon(Icons.Default.Lock, null, tint = TextBlue400) },
                         trailingIcon = {
                             IconButton(onClick = { showPassword = !showPassword }) {
                                 Icon(
-                                    imageVector = if (showPassword) Icons.Default.VisibilityOff
-                                    else Icons.Default.Visibility,
-                                    contentDescription = "Toggle password",
-                                    tint = TextBlue400,
-                                    modifier = Modifier.size(20.dp)
+                                    if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    null, tint = TextBlue400
                                 )
                             }
                         },
-                        visualTransformation = if (showPassword) VisualTransformation.None
-                        else PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = TextWhite,
                             unfocusedTextColor = TextWhite,
                             focusedBorderColor = PrimaryBlue,
-                            unfocusedBorderColor = PrimaryBlue.copy(alpha = 0.3f),
-                            focusedContainerColor = Color(0xFF0C1929).copy(alpha = 0.5f),
-                            unfocusedContainerColor = Color(0xFF0C1929).copy(alpha = 0.5f),
-                            cursorColor = TextBlue400
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.2f)
                         ),
-                        shape = RoundedCornerShape(10.dp),
+                        visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                         singleLine = true,
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Password,
-                            imeAction = ImeAction.Done
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onDone = { focusManager.clearFocus() }
-                        ),
-                        modifier = Modifier.fillMaxWidth()
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
                     )
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Login Button
                     GlowButton(
-                        text = if (isLoading) "Signing in..." else "Sign In",
+                        text = if (isLoading) "Signing in..." else "LOGIN",
                         onClick = {
-                            error = null
                             if (email.isBlank() || password.isBlank()) {
                                 error = "Please fill all fields"
                                 return@GlowButton
@@ -290,28 +192,20 @@ fun DriverLoginScreen(
                             isLoading = true
                             scope.launch {
                                 try {
-                                    val response = api.driverLogin(
-                                        LoginRequest(email.trim(), password)
-                                    )
-                                    if (response.isSuccessful) {
-                                        val body = response.body()
-                                        if (body?.success == true && body.driver != null) {
-                                            sessionManager.saveDriverSession(body.driver!!)
-                                            isOfflineLogin = false
-                                            onLoginSuccess()
-                                        } else {
-                                            error = body?.error ?: body?.message ?: "Login failed"
-                                        }
+                                    val response = api.driverLogin(LoginRequest(email.trim(), password))
+                                    if (response.isSuccessful && response.body()?.success == true) {
+                                        response.body()?.driver?.let { sessionManager.saveDriverSession(it) }
+                                        sessionManager.saveAuthToken(response.body()?.token)
+                                        onLoginSuccess()
                                     } else {
-                                        // Server responded with error — try offline
+                                        // Offline fallback
+                                        Log.w(tag, "Online login failed with code ${response.code()}, using offline fallback")
                                         performOfflineLogin(email, password, sessionManager)
-                                        isOfflineLogin = true
                                         onLoginSuccess()
                                     }
                                 } catch (e: Exception) {
-                                    // Network error — do offline login
+                                    Log.e(tag, "Login exception, using offline fallback", e)
                                     performOfflineLogin(email, password, sessionManager)
-                                    isOfflineLogin = true
                                     onLoginSuccess()
                                 } finally {
                                     isLoading = false
@@ -319,75 +213,34 @@ fun DriverLoginScreen(
                             }
                         },
                         isLoading = isLoading,
-                        variant = GlowVariant.PRIMARY,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        variant = GlowVariant.PRIMARY
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            // Register link
             TextButton(onClick = onRegister) {
-                Text(
-                    text = "Don't have an account? Register here",
-                    color = TextBlue400,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
-                )
+                Text("Don't have an account? Sign Up", color = TextBlue400, fontWeight = FontWeight.Bold)
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Emergency help card
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFFCA8A04).copy(alpha = 0.15f)
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(12.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Need Help?",
-                        color = TextYellow300,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(
-                        text = "Emergency: 112",
-                        color = TextWhite,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+            TextButton(onClick = onBack) {
+                Text("Back to Splash", color = TextWhite70)
             }
-
-            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
 
-/**
- * Offline login — creates a local driver session so the app works
- * without a backend server.
- */
 private fun performOfflineLogin(email: String, password: String, sessionManager: SessionManager) {
-    val name = email.substringBefore("@")
-        .replaceFirstChar { it.uppercase() }
-        .replace(".", " ")
-
-    val offlineDriver = Driver(
-        _id = "offline-${System.currentTimeMillis()}",
-        fullName = name,
+    val mockDriver = com.sarathi.emergency.data.models.Driver(
+        _id = "offline-driver-1",
+        fullName = "Offline Driver",
         email = email,
-        phone = "",
-        licenseNumber = "OFFLINE",
-        vehicleNumber = "SA-00-OFF-0000",
+        phone = "9876543210",
+        licenseNumber = "OFFLINE-123",
+        vehicleNumber = "TS-01-EM-0001",
         isAvailable = true
     )
-    sessionManager.saveDriverSession(offlineDriver)
+    sessionManager.saveDriverSession(mockDriver)
 }

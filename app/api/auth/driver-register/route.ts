@@ -10,16 +10,26 @@ export async function POST(req: NextRequest) {
   try {
     await connectDB();
 
-    const { fullName, email, phone, licenseNumber, vehicleNumber, password, confirmPassword } = await req.json();
+    const {
+      fullName,
+      email,
+      phone,
+      licenseNumber,
+      vehicleNumber,
+      password,
+      confirmPassword: confirmPasswordRaw,
+    } = await req.json();
 
     const normalizedEmail = String(email ?? '').trim().toLowerCase();
     const normalizedPhone = String(phone ?? '').replace(/[^\d]/g, '');
     const normalizedLicense = String(licenseNumber ?? '').trim().toUpperCase();
     const normalizedVehicle = String(vehicleNumber ?? '').trim().toUpperCase().replace(/\s+/g, ' ');
     const normalizedName = String(fullName ?? '').trim();
+    const normalizedPassword = String(password ?? '');
+    const normalizedConfirmPassword = String(confirmPasswordRaw ?? normalizedPassword);
 
     // Validation
-    if (!normalizedName || !normalizedEmail || !normalizedPhone || !normalizedLicense || !normalizedVehicle || !password) {
+    if (!normalizedName || !normalizedEmail || !normalizedPhone || !normalizedLicense || !normalizedVehicle || !normalizedPassword) {
       return NextResponse.json(
         { error: 'Please provide all required fields' },
         { status: 400 }
@@ -41,7 +51,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (password !== confirmPassword) {
+    if (normalizedPassword !== normalizedConfirmPassword) {
       return NextResponse.json(
         { error: 'Passwords do not match' },
         { status: 400 }
@@ -72,7 +82,7 @@ export async function POST(req: NextRequest) {
       phone: normalizedPhone,
       licenseNumber: normalizedLicense,
       vehicleNumber: normalizedVehicle,
-      password,
+      password: normalizedPassword,
     });
 
     // Remove password from response

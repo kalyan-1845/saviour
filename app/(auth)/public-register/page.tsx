@@ -87,10 +87,8 @@ export default function PublicRegisterPage() {
         confirmPassword: '',
       });
 
-      // Redirect to SOS page after 2 seconds
-      setTimeout(() => {
-        window.location.href = '/driver-login';
-      }, 2000);
+      // Redirect to login immediately for speed
+      window.location.href = '/driver-login';
 
     } catch (err: any) {
       setError(err.message || 'Registration failed. Please try again.');

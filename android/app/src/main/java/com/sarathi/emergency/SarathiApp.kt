@@ -5,8 +5,10 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
+import android.util.Log
 import com.sarathi.emergency.data.SessionManager
 import com.sarathi.emergency.data.api.SarathiApi
+import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -14,6 +16,9 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 class SarathiApp : Application() {
+    companion object {
+        private const val TAG = "SarathiApp"
+    }
 
     lateinit var api: SarathiApi
         private set
@@ -28,10 +33,24 @@ class SarathiApp : Application() {
         sessionManager = SessionManager(this)
 
         val loggingInterceptor = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            level = if (BuildConfig.DEBUG) {
+                HttpLoggingInterceptor.Level.BODY
+            } else {
+                HttpLoggingInterceptor.Level.BASIC
+            }
+        }
+
+        val authInterceptor = Interceptor { chain ->
+            val token = sessionManager.getAuthToken()
+            val requestBuilder = chain.request().newBuilder()
+            if (token.isNotBlank()) {
+                requestBuilder.addHeader("Authorization", "Bearer $token")
+            }
+            chain.proceed(requestBuilder.build())
         }
 
         val client = OkHttpClient.Builder()
+            .addInterceptor(authInterceptor)
             .addInterceptor(loggingInterceptor)
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
@@ -45,6 +64,7 @@ class SarathiApp : Application() {
             .build()
 
         api = retrofit.create(SarathiApi::class.java)
+        Log.i(TAG, "API initialized with base URL: ${BuildConfig.BASE_URL}")
     }
 
     private fun createNotificationChannel() {

@@ -54,9 +54,9 @@ com.sarathi.emergency.app-navigation-common-ktx-2.7.7-52 C:\Users\prsnl\.gradle\
 com.sarathi.emergency.app-foundation-release-53 C:\Users\prsnl\.gradle\caches\transforms-3\fc83730aad4fd9f9c7e06d94aa18f80d\transformed\foundation-release\res
 com.sarathi.emergency.app-ui-geometry-release-54 C:\Users\prsnl\.gradle\caches\transforms-3\fccbd5c431c20d1e1febb298193ea4aa\transformed\ui-geometry-release\res
 com.sarathi.emergency.app-savedstate-ktx-1.2.1-55 C:\Users\prsnl\.gradle\caches\transforms-3\feafe4506e00f055cc53add47b9260a0\transformed\savedstate-ktx-1.2.1\res
-com.sarathi.emergency.app-resValues-56 C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\build\generated\res\resValues\debug
-com.sarathi.emergency.app-packageDebugResources-57 C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\build\intermediates\incremental\debug\packageDebugResources\merged.dir
-com.sarathi.emergency.app-packageDebugResources-58 C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\build\intermediates\incremental\debug\packageDebugResources\stripped.dir
-com.sarathi.emergency.app-merged_res-59 C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\build\intermediates\merged_res\debug
-com.sarathi.emergency.app-debug-60 C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\debug\res
-com.sarathi.emergency.app-main-61 C:\Users\prsnl\OneDrive\Desktop\sarathi-emergency\android\app\src\main\res
+com.sarathi.emergency.app-resValues-56 C:\Users\prsnl\OneDrive\Desktop\saviour - Copy\android\app\build\generated\res\resValues\debug
+com.sarathi.emergency.app-packageDebugResources-57 C:\Users\prsnl\OneDrive\Desktop\saviour - Copy\android\app\build\intermediates\incremental\debug\packageDebugResources\merged.dir
+com.sarathi.emergency.app-packageDebugResources-58 C:\Users\prsnl\OneDrive\Desktop\saviour - Copy\android\app\build\intermediates\incremental\debug\packageDebugResources\stripped.dir
+com.sarathi.emergency.app-merged_res-59 C:\Users\prsnl\OneDrive\Desktop\saviour - Copy\android\app\build\intermediates\merged_res\debug
+com.sarathi.emergency.app-debug-60 C:\Users\prsnl\OneDrive\Desktop\saviour - Copy\android\app\src\debug\res
+com.sarathi.emergency.app-main-61 C:\Users\prsnl\OneDrive\Desktop\saviour - Copy\android\app\src\main\res

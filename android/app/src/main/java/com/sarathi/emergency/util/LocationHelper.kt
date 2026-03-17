@@ -8,6 +8,7 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Bundle
 import android.os.Looper
+import android.util.Log
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.*
 
@@ -17,6 +18,9 @@ import com.google.android.gms.location.*
  *  2. Android LocationManager fallback (works without Play Services)
  */
 class LocationHelper(private val context: Context) {
+    companion object {
+        private const val TAG = "LocationHelper"
+    }
 
     private val fusedLocationClient: FusedLocationProviderClient =
         LocationServices.getFusedLocationProviderClient(context)
@@ -52,9 +56,11 @@ class LocationHelper(private val context: Context) {
                 }
                 .addOnFailureListener {
                     // Play Services not available — use fallback
+                    Log.w(TAG, "Fused location failed, using fallback")
                     getLastLocationFallback(onResult)
                 }
         } catch (e: Exception) {
+            Log.e(TAG, "Last location failed", e)
             getLastLocationFallback(onResult)
         }
     }
@@ -90,6 +96,7 @@ class LocationHelper(private val context: Context) {
             }
             onResult(bestLoc)
         } catch (e: SecurityException) {
+            Log.e(TAG, "No permission for fallback last location", e)
             onResult(null)
         }
     }
@@ -126,6 +133,7 @@ class LocationHelper(private val context: Context) {
             usingFused = true
         } catch (e: Exception) {
             // FusedLocation not available, use fallback
+            Log.w(TAG, "Fused updates unavailable, using LocationManager")
         }
 
         // Also start LocationManager as a backup (it'll just give us more data points)
@@ -142,27 +150,29 @@ class LocationHelper(private val context: Context) {
                         override fun onProviderEnabled(provider: String) {}
                         override fun onProviderDisabled(provider: String) {}
                     }
+                    val listener = managerListener
                     // Try GPS provider
-                    if (manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                    if (listener != null && manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                         manager.requestLocationUpdates(
                             LocationManager.GPS_PROVIDER,
                             3000L, 5f,
-                            managerListener!!,
+                            listener,
                             Looper.getMainLooper()
                         )
                     }
                     // Also try Network provider
-                    if (manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+                    if (listener != null && manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
                         manager.requestLocationUpdates(
                             LocationManager.NETWORK_PROVIDER,
                             3000L, 5f,
-                            managerListener!!,
+                            listener,
                             Looper.getMainLooper()
                         )
                     }
                 }
             } catch (e: SecurityException) {
                 // Permission issue
+                Log.e(TAG, "No permission for location updates", e)
             }
         }
 

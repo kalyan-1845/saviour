@@ -1,31 +1,33 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 /**
  * useSpeech Hook
  * Voice Assistant - Text-to-Speech (TTS) functionality
  */
 export function useSpeech() {
-  const [isSupported, setIsSupported] = useState(false);
+  const [isSupported] = useState(
+    typeof window !== 'undefined' &&
+      ('speechSynthesis' in window || 'webkitSpeechSynthesis' in window)
+  );
   const [isSpeaking, setIsSpeaking] = useState(false);
 
-  useEffect(() => {
-    const supported =
-      typeof window !== 'undefined' &&
-      ('speechSynthesis' in window ||
-        'webkitSpeechSynthesis' in window);
-    setIsSupported(supported);
-  }, []);
-
-  const speak = (text: string, options?: { rate?: number; pitch?: number; volume?: number }) => {
+  const speak = (
+    text: string,
+    options?: { rate?: number; pitch?: number; volume?: number; lang?: string }
+  ) => {
     if (!isSupported) {
       console.warn('Speech synthesis not supported');
       return;
     }
 
+    window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = options?.rate || 1;
     utterance.pitch = options?.pitch || 1;
     utterance.volume = options?.volume || 1;
+    if (options?.lang) {
+      utterance.lang = options.lang;
+    }
 
     utterance.onstart = () => setIsSpeaking(true);
     utterance.onend = () => setIsSpeaking(false);

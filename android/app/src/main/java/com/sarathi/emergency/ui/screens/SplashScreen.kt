@@ -2,6 +2,7 @@ package com.sarathi.emergency.ui.screens
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -83,18 +84,37 @@ fun SplashScreen(
             Box(
                 modifier = Modifier
                     .scale(pulseScale)
-                    .size(90.dp)
+                    .size(100.dp)
                     .clip(CircleShape)
-                    .background(Brush.linearGradient(listOf(PrimaryBlue, PrimaryPurple))),
+                    .background(Color.White.copy(alpha = 0.1f))
+                    .border(2.dp, Color.White.copy(alpha = 0.2f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Text("S", color = Color.White, fontSize = 44.sp, fontWeight = FontWeight.Black)
+                Icon(
+                    Icons.Default.Emergency,
+                    contentDescription = "Logo",
+                    tint = EmergencyRed,
+                    modifier = Modifier.size(50.dp)
+                )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            Text("SARATHI", color = TextWhite, fontSize = 36.sp, fontWeight = FontWeight.Black, letterSpacing = 4.sp)
-            Text("Emergency Response System", color = TextBlue300, fontSize = 14.sp, textAlign = TextAlign.Center)
+            Text(
+                text = "SARATHI",
+                color = TextWhite,
+                fontSize = 40.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 6.sp
+            )
+            Text(
+                text = "EMERGENCY VEHICLE NETWORK",
+                color = TextBlue300,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 2.sp,
+                textAlign = TextAlign.Center
+            )
 
             if (!isLoggedIn) {
                 Spacer(modifier = Modifier.height(40.dp))

@@ -24,19 +24,20 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const tripId = String(body?.tripId ?? '').trim();
     const driverEmail = String(body?.driverEmail ?? '').trim().toLowerCase();
-    const latitude = Number(body?.location?.latitude);
-    const longitude = Number(body?.location?.longitude);
+    const driverId = String(body?.driverId ?? '').trim();
+    const latitude = Number(body?.location?.latitude ?? body?.latitude);
+    const longitude = Number(body?.location?.longitude ?? body?.longitude);
     const etaMinutes = Number(body?.etaMinutes);
 
-    if (!tripId || !driverEmail || !Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    if (!tripId || (!driverEmail && !driverId) || !Number.isFinite(latitude) || !Number.isFinite(longitude)) {
       return NextResponse.json(
-        { error: 'tripId, driverEmail and valid location are required.' },
+        { error: 'tripId, driverEmail/driverId and valid location are required.' },
         { status: 400 }
       );
     }
 
     const [driver, trip] = await Promise.all([
-      Driver.findOne({ email: driverEmail }),
+      driverId ? Driver.findById(driverId) : Driver.findOne({ email: driverEmail }),
       EmergencyTrip.findById(tripId).populate('userId', 'fullName phone'),
     ]);
 

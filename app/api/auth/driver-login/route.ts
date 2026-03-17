@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Driver from '@/models/Driver';
+import { signJwt } from '@/lib/jwt';
 
 const DEMO_DRIVER_EMAIL = 'prsnlkalyan@gmail.com';
 const DEMO_DRIVER_PASSWORD = 'kalyan1234';
@@ -58,12 +59,18 @@ export async function POST(req: NextRequest) {
     // Remove password from response
     const driverResponse = driver.toObject();
     delete driverResponse.password;
+    const token = signJwt({
+      sub: String(driverResponse._id),
+      role: 'driver',
+      email: driverResponse.email,
+    });
 
     return NextResponse.json(
       {
         success: true,
         message: 'Login successful',
         driver: driverResponse,
+        token,
       },
       { status: 200 }
     );

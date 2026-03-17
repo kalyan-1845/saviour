@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, Loader2, MapPin, Phone } from 'lucide-react';
 import { useLocation } from '@/hooks/useLocation';
 import { useI18n } from '@/components/shared/LanguageProvider';
+import { MapComponent } from '@/components/map/MapComponent';
 
 type SosResponse = {
   success: boolean;
@@ -15,13 +16,15 @@ type SosResponse = {
     name: string;
     distanceKm: number;
     phone: string;
-    mapUrl?: string;
+    latitude: number;
+    longitude: number;
   } | null;
   policeStation?: {
     name: string;
     distanceKm: number;
     phone: string;
-    mapUrl?: string;
+    latitude: number;
+    longitude: number;
   } | null;
   driver?: {
     id?: string;
@@ -29,6 +32,10 @@ type SosResponse = {
     phone: string;
     vehicleNumber: string;
   } | null;
+  location?: {
+    latitude: number;
+    longitude: number;
+  };
 };
 
 type TrackResponse = {
@@ -41,15 +48,16 @@ type TrackResponse = {
     estimatedTime?: number;
     hospitalName?: string;
     policeStationName?: string;
-    pickupMapUrl?: string;
-    hospitalMapUrl?: string;
+    pickupLocation?: { latitude: number; longitude: number };
+    dropoffLocation?: { latitude: number; longitude: number };
   };
   driver?: {
     fullName: string;
     phone: string;
     vehicleNumber: string;
     currentLocation?: {
-      mapUrl: string;
+      latitude: number;
+      longitude: number;
     } | null;
   } | null;
 };
@@ -100,6 +108,55 @@ export default function PublicSosPage() {
     () => phone.trim().length >= 10 && Boolean(location) && !loading,
     [phone, location, loading]
   );
+
+  const markers = useMemo(() => {
+    const m = [];
+
+    // User current Location
+    if (location) {
+      m.push({
+        position: { lat: location.latitude, lng: location.longitude },
+        title: 'Your Location (Current)',
+      });
+    }
+
+    // Pickup location from trip data
+    const tripData = trackResult?.trip || result;
+    if (tripData && 'pickupLocation' in tripData && tripData.pickupLocation) {
+      m.push({
+        position: { lat: tripData.pickupLocation.latitude, lng: tripData.pickupLocation.longitude },
+        title: 'SOS Pickup Point',
+      });
+    } else if (result?.location) {
+      m.push({
+        position: { lat: result.location.latitude, lng: result.location.longitude },
+        title: 'SOS Pickup Point',
+      });
+    }
+
+    // Dropoff location
+    if (trackResult?.trip.dropoffLocation) {
+      m.push({
+        position: { lat: trackResult.trip.dropoffLocation.latitude, lng: trackResult.trip.dropoffLocation.longitude },
+        title: trackResult.trip.hospitalName || 'Destination',
+      });
+    } else if (result?.hospital?.latitude) {
+      m.push({
+        position: { lat: result.hospital.latitude, lng: result.hospital.longitude },
+        title: result.hospital.name,
+      });
+    }
+
+    // Driver location
+    if (trackResult?.driver?.currentLocation) {
+      m.push({
+        position: { lat: trackResult.driver.currentLocation.latitude, lng: trackResult.driver.currentLocation.longitude },
+        title: `Ambulance: ${trackResult.driver.fullName}`,
+      });
+    }
+
+    return m;
+  }, [location, result, trackResult]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -186,8 +243,8 @@ export default function PublicSosPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white px-4 py-10">
-      <div className="max-w-xl mx-auto">
-        <div className="rounded-2xl border border-red-500/30 bg-slate-900/70 p-6 md:p-8">
+      <div className="max-w-4xl mx-auto grid lg:grid-cols-2 gap-6">
+        <div className="rounded-2xl border border-red-500/30 bg-slate-900/70 p-6 md:p-8 flex flex-col h-fit">
           <div className="flex items-center gap-3 mb-6">
             <div className="h-12 w-12 rounded-xl bg-red-600 flex items-center justify-center">
               <AlertTriangle className="h-6 w-6" />
@@ -244,23 +301,6 @@ export default function PublicSosPage() {
             </div>
           )}
 
-          {result && (
-            <div className="mt-4 rounded-lg border border-emerald-600/50 bg-emerald-950/20 p-4 text-sm space-y-2">
-              <p className="font-semibold text-emerald-300">{t('sos.success')}</p>
-              <p>Trip ID: {result.tripId}</p>
-              <p>Status: {result.status}</p>
-              <p>ETA: {result.etaMinutes} min</p>
-              {result.driver && <p>Driver: {result.driver.fullName} ({result.driver.phone})</p>}
-              {result.hospital && <p>Hospital: {result.hospital.name}</p>}
-              {result.policeStation && <p>Police: {result.policeStation.name}</p>}
-              {result.hospital?.mapUrl && (
-                <a href={result.hospital.mapUrl} target="_blank" rel="noreferrer" className="inline-block text-emerald-300 underline">
-                  Open Hospital Location
-                </a>
-              )}
-            </div>
-          )}
-
           <div className="mt-6 border-t border-slate-700 pt-6">
             <h2 className="text-lg font-bold mb-2">{t('sos.trackTitle')}</h2>
             <form onSubmit={handleTrackExistingSos} className="space-y-3">
@@ -283,54 +323,72 @@ export default function PublicSosPage() {
                 {trackLoading ? t('sos.tracking') : t('sos.track')}
               </button>
             </form>
-
-            {trackError && (
-              <div className="mt-3 rounded-lg border border-red-600/50 bg-red-950/30 px-3 py-2 text-sm text-red-200">
-                {trackError}
-              </div>
-            )}
-
-            {trackResult && (
-              <div className="mt-3 rounded-lg border border-blue-600/50 bg-blue-950/20 p-4 text-sm space-y-2">
-                <p className="font-semibold text-blue-300">Live SOS Tracking</p>
-                <p>Status: {trackResult.trip.status}</p>
-                <p>Update: {trackResult.message}</p>
-                {trackResult.trip.estimatedTime && <p>ETA: {trackResult.trip.estimatedTime} min</p>}
-                {trackResult.driver && <p>Driver: {trackResult.driver.fullName} ({trackResult.driver.phone})</p>}
-                {trackResult.trip.hospitalName && <p>Hospital: {trackResult.trip.hospitalName}</p>}
-                {trackResult.trip.pickupMapUrl && (
-                  <a
-                    href={trackResult.trip.pickupMapUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-block text-blue-300 underline"
-                  >
-                    Open Pickup Location Map
-                  </a>
-                )}
-                {trackResult.trip.hospitalMapUrl && (
-                  <a
-                    href={trackResult.trip.hospitalMapUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-block text-blue-300 underline ml-4"
-                  >
-                    Open Hospital Location
-                  </a>
-                )}
-                {trackResult.driver?.currentLocation?.mapUrl && (
-                  <a
-                    href={trackResult.driver.currentLocation.mapUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-block text-blue-300 underline ml-4"
-                  >
-                    Open Driver Live Location
-                  </a>
-                )}
-              </div>
-            )}
+            {trackError && <p className="mt-2 text-red-400 text-sm">{trackError}</p>}
           </div>
+        </div>
+
+        <div className="flex flex-col gap-6">
+          <div className="rounded-2xl border border-slate-700 bg-black/50 overflow-hidden min-h-[400px] relative">
+            <MapComponent
+              center={location ? { lat: location.latitude, lng: location.longitude } : { lat: 17.3850, lng: 78.4867 }}
+              markers={markers}
+              onLocationChange={() => { }}
+            />
+            <div className="absolute top-4 left-4 bg-slate-900/80 backdrop-blur-md border border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-white z-10">
+              Live SOS Tracking Map
+            </div>
+          </div>
+
+          {(result || trackResult) && (
+            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/10 p-6 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-bold text-emerald-300">
+                  {trackResult ? 'Active SOS Update' : 'Emergency Dispatched'}
+                </h3>
+                <div className="px-3 py-1 bg-emerald-500/20 rounded-full text-emerald-400 text-xs font-black uppercase tracking-widest">
+                  {trackResult?.trip.status || result?.status}
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="p-3 bg-white/5 rounded-lg border border-white/10">
+                  <p className="text-xs text-slate-400 mb-1">Estimated Arrival</p>
+                  <p className="text-2xl font-black text-white">{trackResult?.trip.estimatedTime ?? result?.etaMinutes ?? '-'} <span className="text-sm font-normal text-slate-400">mins</span></p>
+                </div>
+                <div className="p-3 bg-white/5 rounded-lg border border-white/10">
+                  <p className="text-xs text-slate-400 mb-1">Ambulance Unit</p>
+                  <p className="text-lg font-bold text-white truncate">{trackResult?.driver?.fullName ?? result?.driver?.fullName ?? 'Locating...'}</p>
+                  <p className="text-xs text-slate-500">{trackResult?.driver?.vehicleNumber ?? result?.driver?.vehicleNumber ?? ''}</p>
+                </div>
+              </div>
+
+              <div className="space-y-2 border-t border-white/10 pt-4">
+                {trackResult?.message && <p className="text-emerald-200 text-sm italic">"{trackResult.message}"</p>}
+                <p className="text-sm">Assigned Hospital: <span className="font-bold">{trackResult?.trip.hospitalName ?? result?.hospital?.name ?? 'Assessing...'}</span></p>
+                {trackResult?.trip.policeStationName && <p className="text-sm text-blue-300">Police Support: <span className="font-bold">{trackResult.trip.policeStationName}</span></p>}
+              </div>
+
+              <div className="flex gap-2">
+                {(result?.driver?.phone || trackResult?.driver?.phone) && (
+                  <a
+                    href={`tel:${trackResult?.driver?.phone || result?.driver?.phone}`}
+                    className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 py-3 rounded-xl font-bold transition-transform active:scale-95"
+                  >
+                    <Phone size={18} />
+                    Call Ambulance
+                  </a>
+                )}
+                {(result?.hospital?.phone) && (
+                  <a
+                    href={`tel:${result.hospital.phone}`}
+                    className="flex-1 border border-emerald-600 text-emerald-400 py-3 rounded-xl font-bold text-center"
+                  >
+                    Hospital Contact
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useMemo, useState } from 'react';
 
 export type AppLanguage = 'en' | 'te' | 'hi' | 'mr';
 
@@ -241,30 +241,23 @@ const translations: Record<AppLanguage, Record<string, string>> = {
 
 const I18nContext = createContext<I18nContextValue | null>(null);
 
+function getInitialLanguage(): AppLanguage {
+  if (typeof window === 'undefined') return 'en';
+
+  const saved = localStorage.getItem(LANG_KEY) as AppLanguage | null;
+  if (saved && translations[saved]) {
+    return saved;
+  }
+
+  const browserLang = (navigator.language || 'en').toLowerCase();
+  if (browserLang.startsWith('te')) return 'te';
+  if (browserLang.startsWith('hi')) return 'hi';
+  if (browserLang.startsWith('mr')) return 'mr';
+  return 'en';
+}
+
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<AppLanguage>('en');
-
-  useEffect(() => {
-    const saved = localStorage.getItem(LANG_KEY) as AppLanguage | null;
-    if (saved && translations[saved]) {
-      setLanguageState(saved);
-      return;
-    }
-
-    const browserLang = (navigator.language || 'en').toLowerCase();
-    if (browserLang.startsWith('te')) {
-      setLanguageState('te');
-      return;
-    }
-    if (browserLang.startsWith('hi')) {
-      setLanguageState('hi');
-      return;
-    }
-    if (browserLang.startsWith('mr')) {
-      setLanguageState('mr');
-      return;
-    }
-  }, []);
+  const [language, setLanguageState] = useState<AppLanguage>(getInitialLanguage);
 
   const setLanguage = (lang: AppLanguage) => {
     setLanguageState(lang);

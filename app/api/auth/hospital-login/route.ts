@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Hospital from '@/models/Hospital';
+import { signJwt } from '@/lib/jwt';
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,8 +24,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid hospital phone verification.' }, { status: 401 });
     }
 
+    const token = signJwt({
+      sub: String(hospital._id),
+      role: 'hospital',
+      hospitalId: String(hospital._id),
+    });
+
     return NextResponse.json({
       success: true,
+      token,
       hospital: {
         id: hospital._id,
         name: hospital.name,

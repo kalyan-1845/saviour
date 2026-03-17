@@ -1,18 +1,48 @@
 package com.sarathi.emergency.ui.screens
 
 import android.Manifest
-import androidx.compose.animation.core.*
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Emergency
+import androidx.compose.material.icons.filled.LocalHospital
+import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -20,161 +50,126 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
-import com.sarathi.emergency.ui.components.GlowButton
-import com.sarathi.emergency.ui.components.GlowVariant
-import com.sarathi.emergency.ui.components.MapMarker
-import com.sarathi.emergency.ui.components.MarkerColor
-import com.sarathi.emergency.ui.components.MapRoute
-import com.sarathi.emergency.ui.components.OfflineMapView
 import com.sarathi.emergency.data.SessionManager
-import com.sarathi.emergency.ui.theme.*
+import com.sarathi.emergency.data.api.SarathiApi
+import com.sarathi.emergency.data.models.PoliceAlert
+import com.sarathi.emergency.data.repository.SarathiRepository
+import com.sarathi.emergency.ui.components.MapMarker
+import com.sarathi.emergency.ui.components.MapRoute
+import com.sarathi.emergency.ui.components.MarkerColor
+import com.sarathi.emergency.ui.components.OfflineMapView
+import com.sarathi.emergency.ui.theme.DarkNavy
+import com.sarathi.emergency.ui.theme.EmergencyOrange
+import com.sarathi.emergency.ui.theme.EmergencyRed
+import com.sarathi.emergency.ui.theme.PrimaryBlue
+import com.sarathi.emergency.ui.theme.SuccessGreen
+import com.sarathi.emergency.ui.theme.TextBlue300
+import com.sarathi.emergency.ui.theme.TextWhite
+import com.sarathi.emergency.ui.theme.TextWhite50
+import com.sarathi.emergency.ui.theme.TextWhite70
+import com.sarathi.emergency.ui.viewmodel.PoliceDashboardViewModel
+import com.sarathi.emergency.ui.viewmodel.PoliceDashboardViewModelFactory
+import com.sarathi.emergency.util.ExternalActionHandler
 import com.sarathi.emergency.util.LocationHelper
-import kotlinx.coroutines.delay
-import java.text.SimpleDateFormat
-import java.util.*
+import androidx.lifecycle.viewmodel.compose.viewModel
 
-data class GreenCorridorAlert(
-    val id: String,
-    val type: String,
-    val from: String,
-    val to: String,
-    val status: String,
-    val eta: Int,
-    val priority: String,
-    val time: String,
-    val driverName: String = "Assigned Driver",
-    val vehicleNumber: String = "TS-09-XX-1234",
-    val mapUrl: String = "https://maps.google.com/?q=17.4426,78.5006",
-    val fromLat: Double = 17.4426,
-    val fromLng: Double = 78.5006,
-    val toLat: Double = 17.4500,
-    val toLng: Double = 78.5100
-)
+private const val TAG = "PoliceDashboard"
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun PoliceDashboardScreen(
+    stationId: String? = null,
     stationName: String,
     stationArea: String,
+    api: SarathiApi,
     sessionManager: SessionManager,
     onLogout: () -> Unit
 ) {
     val context = LocalContext.current
     val locationHelper = remember { LocationHelper(context) }
+    val repository = remember(api) { SarathiRepository(api) }
+    val viewModel: PoliceDashboardViewModel = viewModel(
+        factory = remember(repository) { PoliceDashboardViewModelFactory(repository) }
+    )
+    val uiState by viewModel.uiState.collectAsState()
 
     var latitude by remember { mutableDoubleStateOf(17.4426) }
     var longitude by remember { mutableDoubleStateOf(78.5006) }
     var hasLocation by remember { mutableStateOf(false) }
+    val alerts: List<PoliceAlert> = uiState.alerts
+    val loading = uiState.loading
+    val lastRefreshLabel = uiState.lastRefreshLabel
 
     val locationPermission = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
+    val activeStationId = remember(stationId) {
+        stationId?.takeIf { it.isNotBlank() }
+            ?: sessionManager.getPoliceStationId().takeIf { it.isNotBlank() }
+    }
+    val activeStationName = remember(stationName) { stationName.takeIf { it.isNotBlank() } }
 
     LaunchedEffect(locationPermission.status.isGranted) {
-        if (locationPermission.status.isGranted) {
-            locationHelper.getLastLocation { loc ->
-                if (loc != null) {
-                    latitude = loc.latitude
-                    longitude = loc.longitude
-                    hasLocation = true
-                }
-            }
-        } else {
+        if (!locationPermission.status.isGranted) {
             locationPermission.launchPermissionRequest()
+            return@LaunchedEffect
+        }
+        locationHelper.getLastLocation { loc ->
+            if (loc != null) {
+                latitude = loc.latitude
+                longitude = loc.longitude
+                hasLocation = true
+            }
         }
     }
 
-    val currentTime = remember {
-        SimpleDateFormat("hh:mm a, dd MMM yyyy", Locale.getDefault()).format(Date())
-    }
-
-    // Simulated live alerts with coordinates
-    var alertList by remember {
-        mutableStateOf(
-            listOf(
-                GreenCorridorAlert("GC-001", "Cardiac", "Jubilee Hills", "Apollo Hospital",
-                    "Active", 5, "Critical", "08:15 AM", "Kalyan", "TS-09-AB-1234",
-                    fromLat = 17.4310, fromLng = 78.4070, toLat = 17.4426, toLng = 78.4470),
-                GreenCorridorAlert("GC-002", "Trauma", "Gachibowli", "NIMS Hospital",
-                    "Active", 8, "High", "08:22 AM", "Raju K", "TS-09-CD-5678",
-                    fromLat = 17.4400, fromLng = 78.3481, toLat = 17.3950, toLng = 78.4946)
-            )
+    LaunchedEffect(activeStationId, activeStationName) {
+        viewModel.startPolling(
+            stationId = activeStationId,
+            stationName = activeStationName
         )
     }
 
-    // POLL FOR LIVE DRIVER UPDATES (SIMULATION)
-    LaunchedEffect(Unit) {
-        while(true) {
-            val simId = sessionManager.getSimulatedSOS()
-            if (simId != null) {
-                val simType = sessionManager.getSimulatedSOSType()
-                val simStatus = sessionManager.getSimulatedSOSStatus()
-                
-                // AUTO-INJECT CORRIDOR ALERT FOR TRANSPORTING PATIENTS
-                if (simStatus == "Transporting Patient") {
-                    val vehicleNum = "SARATHI-AMB-$simId"
-                    val exists = alertList.any { it.vehicleNumber == vehicleNum }
-                    if (!exists) {
-                        val newAlert = GreenCorridorAlert(
-                            id = "POL-${System.currentTimeMillis() % 10000}",
-                            type = simType,
-                            from = "Abids Junction (Live)",
-                            to = "Emergency Unit",
-                            status = "Priority Clearance Active",
-                            eta = 2,
-                            priority = "Critical",
-                            time = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date()),
-                            driverName = "Simulation Unit",
-                            vehicleNumber = vehicleNum,
-                            fromLat = latitude,
-                            fromLng = longitude,
-                            toLat = 17.4000,
-                            toLng = 78.5000
-                        )
-                        alertList = listOf(newAlert) + alertList
-                    }
-                }
-            }
-            delay(5000)
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.stopPolling()
         }
     }
 
-    val alerts = alertList
-
-    val activeCount = alerts.count { it.status != "Completed" }
-    val criticalCount = alerts.count { it.priority == "Critical" }
-
-    // Build map markers from alerts
-    val mapMarkers = remember(alerts) {
+    val mapMarkers = remember(alerts, latitude, longitude) {
         buildList {
-            alerts.forEach { alert ->
-                if (alert.status != "Completed") {
-                    add(MapMarker(alert.fromLat, alert.fromLng, "🚑 ${alert.id} Pickup", alert.from, MarkerColor.RED))
-                    add(MapMarker(alert.toLat, alert.toLng, "🏥 ${alert.to}", "Hospital", MarkerColor.GREEN))
-                }
+            if (hasLocation) {
+                add(MapMarker(latitude, longitude, stationName, stationArea, MarkerColor.BLUE))
+            }
+            alerts.filter { it.status != "completed" }.forEach { alert ->
+                val latLng = parseMapUrl(alert.driver?.liveMapUrl)
+                val lat = latLng?.first ?: latitude
+                val lng = latLng?.second ?: longitude
+                add(
+                    MapMarker(
+                        latitude = lat,
+                        longitude = lng,
+                        title = "Alert ${alert.id.takeLast(6)}",
+                        snippet = "${alert.emergencyType} • ETA ${alert.etaMinutes ?: "?"}m",
+                        markerColor = if (alert.emergencyType.equals("cardiac", true)) MarkerColor.RED else MarkerColor.ORANGE
+                    )
+                )
             }
         }
     }
 
-    // Build routes from active alerts
-    val mapRoutes = remember(alerts) {
-        alerts.filter { it.status != "Completed" }.map { alert ->
-            val color = when (alert.priority) {
-                "Critical" -> android.graphics.Color.parseColor("#DC2626")
-                "High" -> android.graphics.Color.parseColor("#EA580C")
-                else -> android.graphics.Color.parseColor("#4F46E5")
-            }
+    val mapRoutes = remember(alerts, latitude, longitude) {
+        alerts.filter { it.status != "completed" }.map { alert ->
+            val latLng = parseMapUrl(alert.driver?.liveMapUrl)
+            val lat = latLng?.first ?: latitude
+            val lng = latLng?.second ?: longitude
             MapRoute(
-                points = listOf(
-                    alert.fromLat to alert.fromLng,
-                    alert.toLat to alert.toLng
-                ),
-                color = color,
+                points = listOf(lat to lng, latitude to longitude),
+                color = if (alert.emergencyType.equals("cardiac", true)) android.graphics.Color.parseColor("#DC2626") else android.graphics.Color.parseColor("#4F46E5"),
                 width = 4f
             )
         }
@@ -186,7 +181,6 @@ fun PoliceDashboardScreen(
             .background(Brush.verticalGradient(listOf(DarkNavy, Color(0xFF0D1B2A), Color(0xFF1B2838))))
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // ── Header ──
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp),
@@ -200,64 +194,55 @@ fun PoliceDashboardScreen(
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(
-                                modifier = Modifier.size(40.dp).clip(CircleShape)
-                                    .background(Brush.linearGradient(listOf(PrimaryBlue, Color(0xFF1D4ED8)))),
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .background(PrimaryBlue.copy(alpha = 0.2f)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(Icons.Default.Shield, null, tint = Color.White, modifier = Modifier.size(22.dp))
+                                Icon(Icons.Default.Shield, null, tint = PrimaryBlue)
                             }
-                            Spacer(modifier = Modifier.width(10.dp))
+                            Spacer(modifier = Modifier.size(10.dp))
                             Column {
-                                Text("Police Dashboard", color = TextWhite, fontSize = 18.sp, fontWeight = FontWeight.Black)
-                                Text(stationName, color = TextBlue300, fontSize = 12.sp)
+                                Text("Police Dashboard", color = TextWhite, fontWeight = FontWeight.Black)
+                                Text("$stationName • $stationArea", color = TextBlue300, fontSize = 12.sp)
                             }
                         }
-                        IconButton(onClick = onLogout) {
-                            Icon(Icons.Default.Logout, "Logout", tint = TextRed400)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (loading) {
+                                CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = PrimaryBlue)
+                                Spacer(modifier = Modifier.size(10.dp))
+                            }
+                            IconButton(onClick = onLogout) {
+                                Icon(Icons.Default.Logout, "Logout", tint = EmergencyRed)
+                            }
                         }
                     }
-
                     Spacer(modifier = Modifier.height(12.dp))
-
-                    // Stats row
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                        DashStatCard("🚨", "$activeCount", "Active Alerts", PrimaryBlue)
-                        DashStatCard("🔴", "$criticalCount", "Critical", EmergencyRed)
-                        DashStatCard("✅", "${alerts.size - activeCount}", "Completed", SuccessGreen)
-                        DashStatCard("🛣", "$activeCount", "Green Corridors", EmergencyOrange)
+                        DashStatCard("Active", alerts.count { it.status != "completed" }.toString(), PrimaryBlue)
+                        DashStatCard("Critical", alerts.count { it.emergencyType.equals("cardiac", true) }.toString(), EmergencyRed)
+                        DashStatCard("Completed", alerts.count { it.status == "completed" }.toString(), SuccessGreen)
                     }
-
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("Last updated: $currentTime", color = TextWhite50, fontSize = 10.sp,
-                        textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                    Text("Refresh: $lastRefreshLabel", color = TextWhite50, fontSize = 10.sp)
                 }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // ═══════════════════════════════════════════
-            //  LIVE MAP — GREEN CORRIDOR TRACKING
-            // ═══════════════════════════════════════════
             Card(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.04f)),
-                border = CardDefaults.outlinedCardBorder().copy(
-                    width = 1.dp,
-                    brush = Brush.linearGradient(listOf(PrimaryBlue.copy(alpha = 0.3f), Color.Transparent))
-                )
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.04f))
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Map, null, tint = PrimaryBlue, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Green Corridor Map", color = TextWhite, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                        Spacer(modifier = Modifier.weight(1f))
-                        Box(
-                            modifier = Modifier.size(8.dp).clip(CircleShape).background(SuccessGreen)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("LIVE", color = SuccessGreen, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.size(8.dp))
+                        Text("Green Corridor Map", color = TextWhite, fontWeight = FontWeight.Bold)
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     OfflineMapView(
@@ -265,7 +250,7 @@ fun PoliceDashboardScreen(
                             .fillMaxWidth()
                             .height(200.dp),
                         centerLatitude = if (hasLocation) latitude else 17.4426,
-                        centerLongitude = if (hasLocation) longitude else 78.4500,
+                        centerLongitude = if (hasLocation) longitude else 78.5006,
                         zoomLevel = 12.0,
                         markers = mapMarkers,
                         routes = mapRoutes,
@@ -279,29 +264,31 @@ fun PoliceDashboardScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // ── Section Header ──
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Green Corridor Alerts", color = TextWhite, fontWeight = FontWeight.Black, fontSize = 18.sp)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier.size(8.dp).clip(CircleShape).background(SuccessGreen)
+                Text("Route Alerts", color = TextWhite, fontWeight = FontWeight.Black, fontSize = 18.sp)
+                OutlinedButton(onClick = {
+                    viewModel.refresh(
+                        stationId = activeStationId,
+                        stationName = activeStationName
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("LIVE", color = SuccessGreen, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                }) {
+                    Text("Refresh", color = TextWhite)
                 }
             }
 
-            // ── Alert List ──
             LazyColumn(
-                modifier = Modifier.weight(1f).padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                contentPadding = PaddingValues(bottom = 20.dp)
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                items(alerts) { alert ->
+                items(alerts, key = { it.id }) { alert ->
                     AlertCard(alert)
                 }
             }
@@ -310,148 +297,85 @@ fun PoliceDashboardScreen(
 }
 
 @Composable
-private fun AlertCard(alert: GreenCorridorAlert) {
-    val statusColor = when (alert.status) {
-        "Active" -> EmergencyOrange
-        "En Route" -> PrimaryBlue
-        "Completed" -> SuccessGreen
+private fun AlertCard(alert: PoliceAlert) {
+    val statusColor = when (alert.status.lowercase()) {
+        "pending", "assigned" -> EmergencyOrange
+        "in-progress", "accepted" -> PrimaryBlue
+        "completed" -> SuccessGreen
         else -> TextWhite70
     }
-    val priorityColor = when (alert.priority) {
-        "Critical" -> EmergencyRed
-        "High" -> EmergencyOrange
-        else -> TextYellow400
-    }
-
-    val pulseAnim = rememberInfiniteTransition(label = "pulse_${alert.id}")
-    val pulseAlpha by pulseAnim.animateFloat(
-        initialValue = 0.5f, targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(800), RepeatMode.Reverse),
-        label = "alpha_${alert.id}"
-    )
 
     Card(
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.04f)),
         border = CardDefaults.outlinedCardBorder().copy(
             width = 1.dp,
-            brush = Brush.linearGradient(
-                listOf(
-                    statusColor.copy(alpha = if (alert.status != "Completed") 0.4f else 0.1f),
-                    Color.Transparent
-                )
-            )
+            brush = Brush.linearGradient(listOf(statusColor.copy(alpha = 0.4f), Color.Transparent))
         )
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
-            // Row 1: ID + Priority + Status
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(alert.id, color = TextWhite, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    // Priority badge
-                    Text(
-                        alert.priority, color = priorityColor, fontSize = 9.sp, fontWeight = FontWeight.Bold,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(priorityColor.copy(alpha = 0.15f))
-                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                    )
-                }
-                // Status with pulse
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (alert.status != "Completed") {
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(CircleShape)
-                                .background(statusColor.copy(alpha = pulseAlpha))
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                    }
-                    Text(alert.status, color = statusColor, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("ID ${alert.id.takeLast(6)}", color = TextWhite, fontWeight = FontWeight.Bold)
+                Text(alert.status.uppercase(), color = statusColor, fontWeight = FontWeight.Bold)
             }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Row 2: Emergency type
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                val typeIcon = when (alert.type) {
-                    "Cardiac" -> "❤️"
-                    "Trauma" -> "🚑"
-                    "Burn" -> "🔥"
-                    "Stroke" -> "🧠"
-                    "Accident" -> "🚗"
-                    else -> "⚠️"
-                }
-                Text("$typeIcon ${alert.type} Emergency", color = TextWhite, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-            }
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // Row 3: Route
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.LocationOn, null, tint = EmergencyRed, modifier = Modifier.size(14.dp))
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(alert.from, color = TextWhite70, fontSize = 12.sp)
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("→", color = TextWhite50, fontSize = 12.sp)
-                Spacer(modifier = Modifier.width(4.dp))
-                Icon(Icons.Default.LocalHospital, null, tint = SuccessGreen, modifier = Modifier.size(14.dp))
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(alert.to, color = TextWhite70, fontSize = 12.sp)
-            }
-
             Spacer(modifier = Modifier.height(8.dp))
-
-            // Row 4: Details
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Emergency, null, tint = EmergencyRed, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.size(6.dp))
+                Text(alert.emergencyType.uppercase(), color = TextWhite, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+            }
+            if (!alert.policeAlertMessage.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(alert.policeAlertMessage, color = TextWhite70, fontSize = 12.sp, maxLines = 2)
+            }
+            Spacer(modifier = Modifier.height(8.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Person, null, tint = TextBlue400, modifier = Modifier.size(13.dp))
-                    Spacer(modifier = Modifier.width(3.dp))
-                    Text(alert.driverName, color = TextWhite50, fontSize = 11.sp)
+                    Icon(Icons.Default.Person, null, tint = TextWhite70, modifier = Modifier.size(13.dp))
+                    Spacer(modifier = Modifier.size(4.dp))
+                    Text(alert.driver?.fullName ?: "Driver pending", color = TextWhite70, fontSize = 11.sp)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.DirectionsCar, null, tint = TextBlue400, modifier = Modifier.size(13.dp))
-                    Spacer(modifier = Modifier.width(3.dp))
-                    Text(alert.vehicleNumber, color = TextWhite50, fontSize = 11.sp)
+                    Icon(Icons.Default.DirectionsCar, null, tint = TextWhite70, modifier = Modifier.size(13.dp))
+                    Spacer(modifier = Modifier.size(4.dp))
+                    Text(alert.driver?.vehicleNumber ?: "N/A", color = TextWhite50, fontSize = 11.sp)
                 }
-                if (alert.eta > 0) {
+                if (alert.etaMinutes != null) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.AccessTime, null, tint = EmergencyOrange, modifier = Modifier.size(13.dp))
-                        Spacer(modifier = Modifier.width(3.dp))
-                        Text("${alert.eta} min", color = EmergencyOrange, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                        Spacer(modifier = Modifier.size(4.dp))
+                        Text("${alert.etaMinutes}m", color = EmergencyOrange, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
                 }
-                Text(alert.time, color = TextWhite50, fontSize = 11.sp)
             }
-
-            if (alert.status != "Completed") {
-                Spacer(modifier = Modifier.height(10.dp))
-                val context = androidx.compose.ui.platform.LocalContext.current
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        "🗺️ Track Green Corridor",
-                        color = TextBlue300,
-                        textDecoration = TextDecoration.Underline,
-                        fontSize = 12.sp,
-                        modifier = Modifier.clickable {
-                            val uri = android.net.Uri.parse(alert.mapUrl)
-                            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, uri)
-                            context.startActivity(intent)
+            if (!alert.driver?.liveMapUrl.isNullOrBlank()) {
+                val context = LocalContext.current
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Track driver live",
+                    color = TextBlue300,
+                    fontSize = 12.sp,
+                    textDecoration = TextDecoration.Underline,
+                    modifier = Modifier.clickable {
+                        alert.driver?.liveMapUrl?.let { url ->
+                            ExternalActionHandler.openUrl(
+                                context = context,
+                                url = url,
+                                blockedMessage = "External tracking map disabled in app mode"
+                            )
                         }
-                    )
+                    }
+                )
+            }
+            if (!alert.hospitalName.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.LocalHospital, null, tint = SuccessGreen, modifier = Modifier.size(13.dp))
+                    Spacer(modifier = Modifier.size(4.dp))
+                    Text(alert.hospitalName, color = TextWhite70, fontSize = 11.sp)
                 }
             }
         }
@@ -459,11 +383,21 @@ private fun AlertCard(alert: GreenCorridorAlert) {
 }
 
 @Composable
-private fun DashStatCard(icon: String, value: String, label: String, color: Color) {
+private fun DashStatCard(label: String, value: String, color: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(icon, fontSize = 20.sp)
-        Spacer(modifier = Modifier.height(2.dp))
-        Text(value, color = color, fontWeight = FontWeight.Black, fontSize = 20.sp)
-        Text(label, color = TextWhite50, fontSize = 9.sp)
+        Text(value, color = color, fontWeight = FontWeight.Black, fontSize = 18.sp)
+        Text(label, color = TextWhite50, fontSize = 10.sp)
     }
+}
+
+private fun parseMapUrl(mapUrl: String?): Pair<Double, Double>? {
+    if (mapUrl.isNullOrBlank()) return null
+    val marker = "q="
+    val index = mapUrl.indexOf(marker)
+    if (index == -1) return null
+    val coords = mapUrl.substring(index + marker.length).split(",")
+    if (coords.size != 2) return null
+    val lat = coords[0].toDoubleOrNull()
+    val lng = coords[1].toDoubleOrNull()
+    return if (lat != null && lng != null) lat to lng else null
 }

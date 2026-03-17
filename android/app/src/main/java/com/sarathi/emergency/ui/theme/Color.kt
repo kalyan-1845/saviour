@@ -33,6 +33,7 @@ val BorderWhite = Color(0x33FFFFFF)        // white/20
 val TextWhite = Color(0xFFFFFFFF)
 val TextWhite70 = Color(0xB3FFFFFF)
 val TextWhite50 = Color(0x80FFFFFF)
+val TextWhite30 = Color(0x4DFFFFFF)
 val TextBlue300 = Color(0xFF93C5FD)
 val TextBlue400 = Color(0xFF60A5FA)
 val TextOrange200 = Color(0xFFFED7AA)

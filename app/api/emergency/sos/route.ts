@@ -10,8 +10,8 @@ import User from '@/models/User';
 type EmergencyType = 'medical' | 'accident' | 'fire' | 'crime' | 'police' | 'heart_attack';
 
 const EARTH_RADIUS_KM = 6371;
-const DEMO_DRIVER_EMAIL = 'govindammajavvadi85@gmail.com';
-const DEMO_DRIVER_PASSWORD = 'raj123';
+const DEMO_DRIVER_EMAIL = 'prsnlkalyan@gmail.com';
+const DEMO_DRIVER_PASSWORD = 'kalyan1234';
 const SPECIALTY_KEYWORDS: Record<string, string[]> = {
   heart_attack: ['cardio', 'cardiac', 'heart'],
   stroke: ['neuro', 'stroke'],
@@ -140,11 +140,9 @@ export async function POST(request: NextRequest) {
         }).lean()
       : [];
 
-    const policeStations = !medicalEmergency
-      ? await PoliceStation.find({
-          isEmergencyAvailable: true,
-        }).lean()
-      : [];
+    const policeStations = await PoliceStation.find({
+      isEmergencyAvailable: true,
+    }).lean();
 
     const demoDriver = await getOrCreateDemoDriver(latitude, longitude);
     const driverLongitude = demoDriver.currentLocation?.coordinates?.[0] ?? longitude;
@@ -203,6 +201,7 @@ export async function POST(request: NextRequest) {
       hospitalName: nearestHospital?.name,
       policeStationId: nearestPoliceStation?._id?.toString(),
       policeStationName: nearestPoliceStation?.name,
+      notifiedPoliceStationIds: nearestPoliceStation?._id ? [String(nearestPoliceStation._id)] : [],
       dropoffLocation:
         medicalEmergency && nearestHospital
           ? {
@@ -218,6 +217,9 @@ export async function POST(request: NextRequest) {
               }
             : undefined,
       status: 'assigned',
+      policeAlertMessage: nearestPoliceStation
+        ? `Emergency assigned near ${nearestPoliceStation.name}. Driver ${demoDriver.fullName} (${demoDriver.vehicleNumber}) dispatched.`
+        : undefined,
       estimatedTime: etaMinutes,
       distance: medicalEmergency
         ? nearestHospital?.distanceKm ?? demoDriverDistanceKm

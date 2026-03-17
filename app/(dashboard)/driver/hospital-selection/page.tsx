@@ -1,219 +1,130 @@
 'use client';
 
 import { useState } from 'react';
-import { MapPin, Bed, Star, Navigation2, Filter } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { ChevronLeft, MapPin, Filter } from 'lucide-react';
+import Link from 'next/link';
+import { useI18n } from '@/components/shared/LanguageProvider';
 import { HospitalCard, GlowButton } from '@/components/shared';
+import { useEmergencyStore } from '@/store/useEmergencyStore';
+
+const mockHospitals = [
+  {
+    id: '1',
+    name: 'Apollo Hospitals',
+    distance: '2.3 km',
+    eta: '4 min',
+    beds: 12,
+    specialties: ['Cardiac', 'Trauma', 'Neurology'],
+    rating: 4.8,
+    lat: 28.5597,
+    lng: 77.2350,
+  },
+  {
+    id: '2',
+    name: 'Max Super Speciality',
+    distance: '3.1 km',
+    eta: '6 min',
+    beds: 8,
+    specialties: ['Cardiac', 'ICU'],
+    rating: 4.6,
+    lat: 28.5812,
+    lng: 77.2940,
+  },
+  {
+    id: '3',
+    name: 'Fortis Hospital',
+    distance: '1.8 km',
+    eta: '3 min',
+    beds: 15,
+    specialties: ['Emergency', 'Burns'],
+    rating: 4.7,
+    lat: 28.5355,
+    lng: 77.1650,
+  },
+];
 
 interface Hospital {
   id: string;
   name: string;
-  distance: number;
+  distance: string;
+  eta: string;
   beds: number;
   specialties: string[];
   rating: number;
-  address: string;
+  lat: number;
+  lng: number;
 }
 
-export default function HospitalSelectionPage() {
-  const [selectedHospital, setSelectedHospital] = useState<string | null>(null);
-  const [filterSpecialty, setFilterSpecialty] = useState('');
+export default function HospitalSelection() {
+  const { t } = useI18n();
+  const activeTrip = useEmergencyStore((state) => state.activeTrip);
+  const updateStoreHospitals = useEmergencyStore((state) => state.setHospitals);
+  const [localHospitals, setLocalHospitals] = useState<Hospital[]>(mockHospitals);
+  const [filter, setFilter] = useState('');
 
-  const hospitals: Hospital[] = [
-    {
-      id: '1',
-      name: 'Apollo Hospital Delhi',
-      distance: 2.5,
-      beds: 8,
-      specialties: ['Cardiac', 'Trauma', 'Neurology'],
-      rating: 4.8,
-      address: 'Sarita Vihar, Delhi',
-    },
-    {
-      id: '2',
-      name: 'Max Super Specialty',
-      distance: 3.2,
-      beds: 5,
-      specialties: ['Pediatric', 'Burn', 'Trauma'],
-      rating: 4.7,
-      address: 'Patparganj, Delhi',
-    },
-    {
-      id: '3',
-      name: 'Delhi Heart & Lung Institute',
-      distance: 4.1,
-      beds: 12,
-      specialties: ['Cardiac', 'Stroke'],
-      rating: 4.9,
-      address: 'Ansari Nagar, Delhi',
-    },
-    {
-      id: '4',
-      name: 'Fortis Hospital',
-      distance: 1.8,
-      beds: 3,
-      specialties: ['Trauma', 'General'],
-      rating: 4.6,
-      address: 'Sector 62, Noida',
-    },
-  ];
+  const handleSelect = (hospital: Hospital) => {
+    updateStoreHospitals([hospital]);
+    window.location.href = '/driver/active-route';
+  };
 
-  const allSpecialties = Array.from(
-    new Set(hospitals.flatMap((h) => h.specialties))
+  const filteredHospitals = localHospitals.filter(h => 
+    h.specialties.some(s => s.toLowerCase().includes(filter.toLowerCase())) ||
+    h.name.toLowerCase().includes(filter.toLowerCase())
   );
-
-  const filteredHospitals = filterSpecialty
-    ? hospitals.filter((h) => h.specialties.includes(filterSpecialty))
-    : hospitals.sort((a, b) => a.distance - b.distance);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 p-4">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8 pt-8">
-          <h1 className="text-5xl font-black text-white mb-2">
-            Select Hospital
-          </h1>
-          <p className="text-blue-200 text-xl">
-            Nearest hospitals with best match for your condition
-          </p>
-        </div>
-
-        {/* Filter Section */}
-        <div className="mb-8 flex flex-wrap gap-3 items-center justify-center">
-          <div className="flex items-center gap-2 text-white">
-            <Filter size={20} />
-            <span className="font-semibold">Filter by:</span>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="min-h-screen p-6 bg-gradient-to-br from-slate-950 via-slate-900"
+    >
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-8">
+          <Link href="/driver/dashboard" className="flex items-center gap-2 text-slate-400 hover:text-white mb-6 inline-block">
+            <ChevronLeft size={20} />
+            Select Emergency Type
+          </Link>
+          <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center mb-8">
+            <div>
+              <h1 className="text-3xl font-black gradient-text">Hospital Selection</h1>
+              <p className="text-slate-300">Emergency: <span className="font-semibold text-orange-400">{activeTrip?.type || 'Cardiac'}</span></p>
+            </div>
+            <div className="flex gap-2">
+              <div className="relative">
+                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                <input
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                  placeholder="Filter by specialty"
+                  className="pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg focus:border-orange-400"
+                />
+              </div>
+              <GlowButton size="sm" variant="secondary">
+                Sort by Distance
+              </GlowButton>
+            </div>
           </div>
-          <button
-            onClick={() => setFilterSpecialty('')}
-            className={`px-4 py-2 rounded-lg font-semibold transition ${
-              !filterSpecialty
-                ? 'bg-blue-600 text-white'
-                : 'bg-white/10 text-white/70 hover:bg-white/20'
-            }`}
-          >
-            All
-          </button>
-          {allSpecialties.map((specialty) => (
-            <button
-              key={specialty}
-              onClick={() => setFilterSpecialty(specialty)}
-              className={`px-4 py-2 rounded-lg font-semibold transition ${
-                filterSpecialty === specialty
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white/10 text-white/70 hover:bg-white/20'
-              }`}
-            >
-              {specialty}
-            </button>
-          ))}
         </div>
-
-        {/* Hospitals Grid */}
-        <div className="grid md:grid-cols-2 gap-6 mb-12">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredHospitals.map((hospital) => (
-            <button
-              key={hospital.id}
-              onClick={() => setSelectedHospital(hospital.id)}
-              className="text-left"
-            >
-              <HospitalCard
-                name={hospital.name}
-                distance={hospital.distance}
-                beds={hospital.beds}
-                specialties={hospital.specialties}
-                isSelected={selectedHospital === hospital.id}
-                onSelect={() => setSelectedHospital(hospital.id)}
-              />
-            </button>
+            <HospitalCard key={hospital.id} hospital={hospital} onSelect={() => {}}>
+              <div className="mt-4">
+                <GlowButton className="w-full" onClick={() => handleSelect(hospital)}>
+                  Navigate ({hospital.eta})
+                </GlowButton>
+              </div>
+            </HospitalCard>
           ))}
         </div>
-
-        {/* Selected Hospital Details */}
-        {selectedHospital && (
-          <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-2 border-blue-500 rounded-xl p-8 mb-8">
-            {(() => {
-              const hospital = hospitals.find((h) => h.id === selectedHospital);
-              return hospital ? (
-                <div>
-                  <div className="flex justify-between items-start mb-6">
-                    <div>
-                      <h2 className="text-3xl font-black text-white mb-2">
-                        {hospital.name}
-                      </h2>
-                      <p className="text-blue-300 flex items-center gap-2">
-                        <MapPin size={16} />
-                        {hospital.address}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <div className="flex items-center gap-1 justify-end mb-2">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            size={18}
-                            className={
-                              i < Math.floor(hospital.rating)
-                                ? 'fill-yellow-400 text-yellow-400'
-                                : 'text-white/20'
-                            }
-                          />
-                        ))}
-                      </div>
-                      <p className="text-yellow-400 font-bold">
-                        {hospital.rating} rating
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="grid md:grid-cols-3 gap-4 mb-6">
-                    <div className="bg-white/10 p-4 rounded-lg">
-                      <p className="text-white/70 text-sm mb-1">Distance</p>
-                      <p className="text-white text-2xl font-bold">
-                        {hospital.distance.toFixed(1)} km
-                      </p>
-                    </div>
-                    <div className="bg-white/10 p-4 rounded-lg">
-                      <p className="text-white/70 text-sm mb-1">
-                        Available Beds
-                      </p>
-                      <p className="text-white text-2xl font-bold">
-                        {hospital.beds}
-                      </p>
-                    </div>
-                    <div className="bg-white/10 p-4 rounded-lg">
-                      <p className="text-white/70 text-sm mb-1">ETA</p>
-                      <p className="text-white text-2xl font-bold">
-                        {Math.ceil(hospital.distance * 3)} mins
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ) : null;
-            })()}
-          </div>
+        {filteredHospitals.length === 0 && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12">
+            <MapPin size={48} className="mx-auto text-slate-500 mb-4" />
+            <p className="text-slate-400">No hospitals match your filter</p>
+          </motion.div>
         )}
-
-        {/* Action Buttons */}
-        <div className="flex gap-4 justify-center mb-8">
-          <button
-            onClick={() => setSelectedHospital(null)}
-            className="px-8 py-3 bg-white/10 hover:bg-white/20 border-2 border-white/20 text-white font-bold rounded-lg transition"
-          >
-            Clear Selection
-          </button>
-          {selectedHospital && (
-            <GlowButton
-              variant="primary"
-              size="lg"
-              className="flex items-center gap-2"
-            >
-              <Navigation2 size={20} />
-              Start Navigation
-            </GlowButton>
-          )}
-        </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
+

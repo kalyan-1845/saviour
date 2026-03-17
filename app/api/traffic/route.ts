@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import connectDB from '@/lib/mongodb';
+import PoliceStation from '@/models/PoliceStation';
 
 /**
  * POST /api/traffic
  * Green Corridor Messaging Logic
-n * Sends notifications to traffic systems and police for clearing emergency corridors
+ * Sends notifications to traffic systems and police for clearing emergency corridors
  */
 export async function POST(request: NextRequest) {
   try {
@@ -17,8 +19,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Simulate sending green corridor messages to traffic systems
-    console.log('Green Corridor Alert:', {
+    await connectDB();
+
+    // Find nearby police stations to notify
+    const policeStations = await PoliceStation.find({
+      city: 'Hyderabad' // Simplification, could be geospatial
+    }).limit(2);
+
+    console.log('Green Corridor Alert Activated:', {
       driverId,
       location,
       emergencyType,
@@ -34,10 +42,11 @@ export async function POST(request: NextRequest) {
         'Signal priority set to emergency vehicle',
         'Road blockage alerts sent',
       ],
-      policeStations: [
-        { station: 'Central Police Station', status: 'Notified' },
-        { station: 'Traffic Control Center', status: 'Notified' },
-      ],
+      policeStations: policeStations.map(ps => ({
+        station: ps.name,
+        status: 'Notified',
+        phone: ps.phone
+      })),
     });
   } catch (error) {
     console.error('Green corridor activation error:', error);
@@ -50,10 +59,14 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET /api/traffic
- * Get current traffic status and heatmap data
+ * Get current traffic status
  */
 export async function GET(request: NextRequest) {
   try {
+    // In a real app, this would fetch from a traffic provider API (e.g., TomTom, Google Traffic)
+    // For now, we connect to DB to show we are online
+    await connectDB();
+
     const { searchParams } = new URL(request.url);
     const lat = searchParams.get('lat');
     const lng = searchParams.get('lng');
@@ -62,19 +75,19 @@ export async function GET(request: NextRequest) {
     // Mock traffic heatmap data
     const trafficZones = [
       {
-        area: 'Main Road',
+        area: 'Jubilee Hills Checkpost',
         status: 'heavy',
         congestion: 85,
         avgSpeed: 15,
       },
       {
-        area: 'Side Street A',
+        area: 'Banjara Hills Rd 12',
         status: 'moderate',
         congestion: 50,
         avgSpeed: 35,
       },
       {
-        area: 'Highway Exit',
+        area: 'Hitech City Flyover',
         status: 'light',
         congestion: 20,
         avgSpeed: 60,

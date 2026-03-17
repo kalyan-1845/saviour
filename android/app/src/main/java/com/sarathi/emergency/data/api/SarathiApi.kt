@@ -20,7 +20,7 @@ interface SarathiApi {
     //  EMERGENCY / SOS
     // ══════════════════════════════════════
 
-    @POST("api/emergency/sos")
+    @POST("api/sos")
     suspend fun sendSos(@Body request: SosRequest): Response<SosResponse>
 
     @GET("api/emergency/track")
@@ -33,18 +33,19 @@ interface SarathiApi {
     //  DRIVER
     // ══════════════════════════════════════
 
-    @GET("api/driver/assigned-trip")
+    @GET("api/driver/trips")
     suspend fun getAssignedTrip(
-        @Query("driverId") driverId: String
+        @Query("driverId") driverId: String? = null,
+        @Query("email") email: String? = null
     ): Response<AssignedTripResponse>
 
-    @POST("api/driver/select-emergency")
+    @POST("api/driver/update")
     suspend fun selectEmergency(@Body request: EmergencySelectRequest): Response<EmergencySelectResponse>
 
     @POST("api/driver/notify")
     suspend fun notifyAuthorities(@Body request: NotifyRequest): Response<NotifyResponse>
 
-    @POST("api/driver/update-location")
+    @POST("api/driver/update")
     suspend fun updateDriverLocation(@Body request: DriverLocationRequest): Response<GenericResponse>
 
     // ══════════════════════════════════════
@@ -57,4 +58,30 @@ interface SarathiApi {
         @Query("latitude") latitude: Double? = null,
         @Query("longitude") longitude: Double? = null
     ): Response<HospitalListResponse>
+
+    // ══════════════════════════════════════
+    //  POLICE / HOSPITAL PANELS
+    // ══════════════════════════════════════
+
+    @GET("api/police/alerts")
+    suspend fun getPoliceAlerts(
+        @Query("stationId") stationId: String? = null,
+        @Query("stationName") stationName: String? = null
+    ): Response<PoliceAlertResponse>
+
+    @GET("api/hospital/cases")
+    suspend fun getHospitalCases(
+        @Query("hospitalId") hospitalId: String? = null,
+        @Query("hospitalName") hospitalName: String? = null
+    ): Response<HospitalCaseResponse>
+
+    @POST("api/hospital/update")
+    suspend fun updateHospitalCaseStatus(@Body request: UpdateCaseStatusRequest): Response<UpdateCaseStatusResponse>
+
+    // ══════════════════════════════════════
+    //  AI ANALYSIS
+    // ══════════════════════════════════════
+
+    @POST("api/groq")
+    suspend fun analyzeRoute(@Body request: GroqRequest): Response<GroqResponse>
 }

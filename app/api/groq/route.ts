@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-if (!process.env.GROQ_API_KEY) {
-  console.error('GROQ_API_KEY is not set');
-}
+import { analyzeRoute } from '@/lib/groq';
 
 /**
  * POST /api/groq
@@ -12,7 +9,7 @@ if (!process.env.GROQ_API_KEY) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { origin, destination, emergencyType } = body;
+    const { origin, destination, emergencyType, trafficData } = body;
 
     if (!origin || !destination) {
       return NextResponse.json(
@@ -21,22 +18,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Simulate AI route analysis
-    // In production, call Groq API for advanced analysis
-    const mockAnalysis = `Optimal route from ${origin} to ${destination}. Emergency: ${emergencyType}. Distance: 8.5km, ETA: 12 minutes. Traffic: Moderate on Main Road. Alternative: Highway exit recommended.`;
-    
+    const now = new Date().toISOString();
+    const analysis = await analyzeRoute({
+      origin,
+      destination,
+      emergencyType,
+      trafficData,
+      timestamp: now,
+    });
+
+    const trafficLevel =
+      typeof trafficData?.level === 'string'
+        ? trafficData.level
+        : typeof trafficData?.congestion === 'string'
+          ? trafficData.congestion
+          : 'moderate';
+
     return NextResponse.json({
       success: true,
-      analysis: mockAnalysis,
-      estimatedTime: Math.ceil(Math.random() * 20) + 5,
-      distance: (Math.random() * 15).toFixed(1),
-      trafficLevel: 'moderate',
-      routeAlternatives: 2,
+      analysis,
+      estimatedTime: null,
+      distance: null,
+      trafficLevel,
+      routeAlternatives: 1,
+      generatedAt: now,
     });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Route analysis error:', error);
     return NextResponse.json(
-      { error: 'Failed to process route analysis' },
+      {
+        error:
+          error instanceof Error ? error.message : 'Failed to process route analysis',
+      },
       { status: 500 }
     );
   }

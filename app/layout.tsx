@@ -4,6 +4,7 @@ import "./globals.css";
 import { Navbar } from "@/components/shared";
 import { LanguageProvider } from "@/components/shared/LanguageProvider";
 import { SpaceBackdrop } from "@/components/shared/SpaceBackdrop";
+import { VoiceAssistant } from "@/components/shared/VoiceAssistant";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -46,6 +47,7 @@ export default function RootLayout({
           <div className="relative z-10">
             <Navbar />
             {children}
+            <VoiceAssistant />
           </div>
         </LanguageProvider>
       </body>

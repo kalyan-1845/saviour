@@ -8,23 +8,43 @@ import mongoose from 'mongoose';
 export async function GET(request: NextRequest) {
   try {
     await connectDB();
-    const stationId = String(new URL(request.url).searchParams.get('stationId') ?? '').trim();
+    const searchParams = new URL(request.url).searchParams;
+    const stationId = String(searchParams.get('stationId') ?? '').trim();
+    const stationName = String(searchParams.get('stationName') ?? '').trim();
 
-    if (!stationId) {
-      return NextResponse.json({ error: 'stationId is required.' }, { status: 400 });
+    if (!stationId && !stationName) {
+      return NextResponse.json({ error: 'stationId or stationName is required.' }, { status: 400 });
     }
 
-    const stationIdQuery: Record<string, unknown>[] = [{ notifiedPoliceStationIds: stationId }];
-    if (mongoose.Types.ObjectId.isValid(stationId)) {
-      stationIdQuery.push({ notifiedPoliceStationIds: new mongoose.Types.ObjectId(stationId) });
+    const filters: Record<string, unknown>[] = [];
+
+    if (stationId) {
+      filters.push({ notifiedPoliceStationIds: stationId });
+      if (mongoose.Types.ObjectId.isValid(stationId)) {
+        filters.push({ notifiedPoliceStationIds: new mongoose.Types.ObjectId(stationId) });
+      }
     }
 
-    const trips = await EmergencyTrip.find({
-      $or: stationIdQuery,
+    if (stationName) {
+      filters.push({ policeStationName: new RegExp(stationName, 'i') });
+    }
+
+    let trips = await EmergencyTrip.find({
+      $or: filters,
     })
       .sort({ updatedAt: -1 })
       .limit(50)
       .lean();
+
+    // Demo/stability fallback: if station-specific alerts are missing, return recent active alerts.
+    if (trips.length === 0) {
+      trips = await EmergencyTrip.find({
+        status: { $in: ['assigned', 'accepted', 'in-progress'] },
+      })
+        .sort({ updatedAt: -1 })
+        .limit(25)
+        .lean();
+    }
 
     const userIds = trips
       .map((trip) => String(trip.userId ?? ''))
