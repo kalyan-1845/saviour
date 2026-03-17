@@ -34,64 +34,34 @@
 > Task :app:writeDebugSigningConfigVersions UP-TO-DATE
 
 > Task :app:compileDebugKotlin
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/SarathiApp.kt:22:9 Unresolved reference: createNotificationChannel
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:5:24 Conflicting import, imported name 'Intent' is ambiguous
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:41:24 Conflicting import, imported name 'Intent' is ambiguous
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:58:37 Unresolved reference: LocationHelper
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:80:28 Unresolved reference: getLastLocation
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:80:46 Cannot infer a type for this parameter. Please specify it explicitly.
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:88:28 Unresolved reference: requestLocationUpdates
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:88:53 Cannot infer a type for this parameter. Please specify it explicitly.
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:246:25 Unresolved reference: notifyResult
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:253:33 Unresolved reference: notifyResult
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:254:37 @Composable invocations can only happen from the context of a @Composable function
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:255:37 @Composable invocations can only happen from the context of a @Composable function
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:255:48 Unresolved reference: it
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:255:60 Unresolved reference: it
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:257:33 Unresolved reference: notifyResult
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:257:61 Cannot infer a type for this parameter. Please specify it explicitly.
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:258:48 Overload resolution ambiguity: 
-public inline fun <T> Iterable<TypeVariable(T)>.forEach(action: (TypeVariable(T)) -> Unit): Unit defined in kotlin.collections
-public inline fun <K, V> Map<out TypeVariable(K), TypeVariable(V)>.forEach(action: (Map.Entry<TypeVariable(K), TypeVariable(V)>) -> Unit): Unit defined in kotlin.collections
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:258:58 Cannot infer a type for this parameter. Please specify it explicitly.
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:259:41 @Composable invocations can only happen from the context of a @Composable function
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:260:41 @Composable invocations can only happen from the context of a @Composable function
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:395:44 Unresolved reference: clickable
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/HospitalDashboardScreen.kt:62:21 Unresolved reference: SessionManager
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/HospitalDashboardScreen.kt:63:10 Unresolved reference: SarathiApi
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/HospitalDashboardScreen.kt:116:13 Unresolved reference: delay
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/PoliceDashboardScreen.kt:64:21 Unresolved reference: SessionManager
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/PoliceDashboardScreen.kt:118:13 Unresolved reference: delay
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/SOSScreen.kt:259:17 Unresolved reference: LazyRow
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/SOSScreen.kt:260:21 Unresolved reference: items
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/SOSScreen.kt:260:45 Cannot infer a type for this parameter. Please specify it explicitly.
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/SOSScreen.kt:262:25 @Composable invocations can only happen from the context of a @Composable function
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/SOSScreen.kt:262:25 This material API is experimental and is likely to change or to be removed in the future.
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/SOSScreen.kt:265:51 @Composable invocations can only happen from the context of a @Composable function
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/SOSScreen.kt:268:54 Unresolved reference: BorderStroke
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/SOSScreen.kt:275:33 Overload resolution ambiguity: 
-public fun Text(text: AnnotatedString, modifier: Modifier = ..., color: Color = ..., fontSize: TextUnit = ..., fontStyle: FontStyle? = ..., fontWeight: FontWeight? = ..., fontFamily: FontFamily? = ..., letterSpacing: TextUnit = ..., textDecoration: TextDecoration? = ..., textAlign: TextAlign? = ..., lineHeight: TextUnit = ..., overflow: TextOverflow = ..., softWrap: Boolean = ..., maxLines: Int = ..., minLines: Int = ..., inlineContent: Map<String, InlineTextContent> = ..., onTextLayout: (TextLayoutResult) -> Unit = ..., style: TextStyle = ...): Unit defined in androidx.compose.material3
-public fun Text(text: String, modifier: Modifier = ..., color: Color = ..., fontSize: TextUnit = ..., fontStyle: FontStyle? = ..., fontWeight: FontWeight? = ..., fontFamily: FontFamily? = ..., letterSpacing: TextUnit = ..., textDecoration: TextDecoration? = ..., textAlign: TextAlign? = ..., lineHeight: TextUnit = ..., overflow: TextOverflow = ..., softWrap: Boolean = ..., maxLines: Int = ..., minLines: Int = ..., onTextLayout: (TextLayoutResult) -> Unit = ..., style: TextStyle = ...): Unit defined in androidx.compose.material3
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/SOSScreen.kt:277:33 Overload resolution ambiguity: 
-public fun Text(text: AnnotatedString, modifier: Modifier = ..., color: Color = ..., fontSize: TextUnit = ..., fontStyle: FontStyle? = ..., fontWeight: FontWeight? = ..., fontFamily: FontFamily? = ..., letterSpacing: TextUnit = ..., textDecoration: TextDecoration? = ..., textAlign: TextAlign? = ..., lineHeight: TextUnit = ..., overflow: TextOverflow = ..., softWrap: Boolean = ..., maxLines: Int = ..., minLines: Int = ..., inlineContent: Map<String, InlineTextContent> = ..., onTextLayout: (TextLayoutResult) -> Unit = ..., style: TextStyle = ...): Unit defined in androidx.compose.material3
-public fun Text(text: String, modifier: Modifier = ..., color: Color = ..., fontSize: TextUnit = ..., fontStyle: FontStyle? = ..., fontWeight: FontWeight? = ..., fontFamily: FontFamily? = ..., letterSpacing: TextUnit = ..., textDecoration: TextDecoration? = ..., textAlign: TextAlign? = ..., lineHeight: TextUnit = ..., overflow: TextOverflow = ..., softWrap: Boolean = ..., maxLines: Int = ..., minLines: Int = ..., onTextLayout: (TextLayoutResult) -> Unit = ..., style: TextStyle = ...): Unit defined in androidx.compose.material3
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/SOSScreen.kt:373:30 Unresolved reference: BorderStroke
-e: file:///C:/Users/prsnl/OneDrive/Desktop/sarathi-emergency/android/app/src/main/java/com/sarathi/emergency/ui/screens/SOSScreen.kt:433:38 Unresolved reference: BorderStroke
+w: file:///C:/Users/prsnl/OneDrive/Desktop/saviour%20-%20Copy/android/app/src/main/java/com/sarathi/emergency/ui/screens/ActiveRouteScreen.kt:101:71 'ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack
+w: file:///C:/Users/prsnl/OneDrive/Desktop/saviour%20-%20Copy/android/app/src/main/java/com/sarathi/emergency/ui/screens/DriverDashboardScreen.kt:41:5 Parameter 'onNavigateToHospitalSelection' is never used
+w: file:///C:/Users/prsnl/OneDrive/Desktop/saviour%20-%20Copy/android/app/src/main/java/com/sarathi/emergency/ui/screens/DriverRegisterScreen.kt:48:9 Variable 'focusManager' is never used
+w: file:///C:/Users/prsnl/OneDrive/Desktop/saviour%20-%20Copy/android/app/src/main/java/com/sarathi/emergency/ui/screens/HospitalDashboardScreen.kt:199:52 'Logout: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Logout
+w: file:///C:/Users/prsnl/OneDrive/Desktop/saviour%20-%20Copy/android/app/src/main/java/com/sarathi/emergency/ui/screens/HospitalSelectionScreen.kt:115:44 'ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack
+w: file:///C:/Users/prsnl/OneDrive/Desktop/saviour%20-%20Copy/android/app/src/main/java/com/sarathi/emergency/ui/screens/PoliceDashboardScreen.kt:213:52 'Logout: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Logout
+w: file:///C:/Users/prsnl/OneDrive/Desktop/saviour%20-%20Copy/android/app/src/main/java/com/sarathi/emergency/ui/screens/SOSScreen.kt:51:5 Parameter 'sessionManager' is never used
+w: file:///C:/Users/prsnl/OneDrive/Desktop/saviour%20-%20Copy/android/app/src/main/java/com/sarathi/emergency/ui/screens/SOSScreen.kt:54:9 Variable 'context' is never used
+w: file:///C:/Users/prsnl/OneDrive/Desktop/saviour%20-%20Copy/android/app/src/main/java/com/sarathi/emergency/ui/screens/SOSScreen.kt:119:40 'ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack
+w: file:///C:/Users/prsnl/OneDrive/Desktop/saviour%20-%20Copy/android/app/src/main/java/com/sarathi/emergency/ui/viewmodel/DriverViewModel.kt:80:82 Elvis operator (?:) always returns the left operand of non-nullable type String
+w: file:///C:/Users/prsnl/OneDrive/Desktop/saviour%20-%20Copy/android/app/src/main/java/com/sarathi/emergency/ui/viewmodel/DriverViewModel.kt:100:82 Elvis operator (?:) always returns the left operand of non-nullable type String
+w: file:///C:/Users/prsnl/OneDrive/Desktop/saviour%20-%20Copy/android/app/src/main/java/com/sarathi/emergency/util/LocationHelper.kt:149:38 This declaration overrides deprecated member but not marked as deprecated itself. Please add @Deprecated annotation or suppress. See https://youtrack.jetbrains.com/issue/KT-47902 for details
+w: file:///C:/Users/prsnl/OneDrive/Desktop/saviour%20-%20Copy/android/app/src/main/java/com/sarathi/emergency/util/LocationHelper.kt:155:25 Condition 'listener != null' is always 'true'
+w: file:///C:/Users/prsnl/OneDrive/Desktop/saviour%20-%20Copy/android/app/src/main/java/com/sarathi/emergency/util/LocationHelper.kt:164:25 Condition 'listener != null' is always 'true'
 
-> Task :app:compileDebugKotlin FAILED
+> Task :app:compileDebugJavaWithJavac
+warning: [options] source value 8 is obsolete and will be removed in a future release
+warning: [options] target value 8 is obsolete and will be removed in a future release
+warning: [options] To suppress warnings about obsolete options, use -Xlint:-options.
+3 warnings
 
-FAILURE: Build failed with an exception.
+> Task :app:processDebugJavaRes
+> Task :app:dexBuilderDebug
+> Task :app:mergeProjectDexDebug
+> Task :app:mergeDebugJavaResource
+> Task :app:packageDebug
+> Task :app:createDebugApkListingFileRedirect
+> Task :app:assembleDebug
 
-* What went wrong:
-Execution failed for task ':app:compileDebugKotlin'.
-> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
-   > Compilation error. See log for more details
-
-* Try:
-> Run with --stacktrace option to get the stack trace.
-> Run with --info or --debug option to get more log output.
-> Run with --scan to get full insights.
-> Get more help at https://help.gradle.org.
-
-BUILD FAILED in 12s
-27 actionable tasks: 2 executed, 25 up-to-date
+BUILD SUCCESSFUL in 40s
+34 actionable tasks: 9 executed, 25 up-to-date

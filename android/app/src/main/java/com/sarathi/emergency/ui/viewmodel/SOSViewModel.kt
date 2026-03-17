@@ -90,7 +90,7 @@ class SOSViewModel(
                         // Log error but continue polling
                     }
                 }
-                delay(5000) // Poll every 5 seconds
+                delay(3000) // Poll every 3 seconds for speed
             }
         }
     }

@@ -30,7 +30,7 @@ class HospitalDashboardViewModel(
 
     private var pollJob: Job? = null
 
-    fun startPolling(hospitalId: String?, hospitalName: String?, intervalMs: Long = 8000L) {
+    fun startPolling(hospitalId: String?, hospitalName: String?, intervalMs: Long = 3000L) {
         if (pollJob?.isActive == true) return
         pollJob = viewModelScope.launch {
             while (true) {

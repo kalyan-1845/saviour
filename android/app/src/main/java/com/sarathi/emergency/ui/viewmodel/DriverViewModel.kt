@@ -62,7 +62,7 @@ class DriverViewModel(
                         }
                     }
                 }
-                delay(10000) // Poll for new assignments every 10 seconds
+                delay(3000) // Poll for new assignments every 3 seconds for speed
             }
         }
     }

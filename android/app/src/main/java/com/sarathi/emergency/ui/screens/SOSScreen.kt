@@ -1,3 +1,4 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
 package com.sarathi.emergency.ui.screens
 
 import android.Manifest
@@ -21,6 +22,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -68,95 +70,137 @@ fun SOSScreen(
             currentLocation?.let {
                 add(MapMarker(it.latitude, it.longitude, "📍 Your Location", "GPS Active", MarkerColor.BLUE))
             }
-            (uiState as? SosUiState.Tracking)?.response?.let { res ->
-                res.driver?.currentLocation?.let { dloc ->
-                    val lat = dloc.latitude ?: 0.0
-                    val lng = dloc.longitude ?: 0.0
-                    add(MapMarker(lat, lng, "🚑 Ambulance", "Emergency Vehicle", MarkerColor.RED))
-                }
-                res.trip?.hospitalName?.let { hName ->
-                    // Approximate location for visual feedback if hospital coords aren't in response
-                    add(MapMarker((currentLocation?.latitude ?: 17.44) + 0.005, (currentLocation?.longitude ?: 78.50) + 0.005, "🏥 $hName", "Assigned Hospital", MarkerColor.GREEN))
-                }
-            }
         }
     }
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("SARATHI SOS", fontWeight = FontWeight.Black) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = Color.Transparent,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
-                )
-            )
-        },
-        containerColor = DarkNavy
-    ) { padding ->
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(DarkNavy)
+    ) {
+        // Map Background
+        OfflineMapView(
+            centerLatitude = currentLocation?.latitude ?: 12.9716,
+            centerLongitude = currentLocation?.longitude ?: 77.5946,
+            markers = mapMarkers,
+            modifier = Modifier.fillMaxSize()
+        )
+
+        // Overlay with Blur/Gradient
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Brush.verticalGradient(listOf(Color(0xFF0F0A1E), Color(0xFF141F3A), DarkNavy)))
-                .padding(padding)
-        ) {
-            Column(
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color.Transparent,
+                            DarkNavy.copy(alpha = 0.5f),
+                            DarkNavy
+                        )
+                    )
+                )
+        )
+
+        // Header
+        Column(modifier = Modifier.fillMaxSize()) {
+            Row(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(16.dp)
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Map Section
-                Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.04f))
+                IconButton(
+                    onClick = onBack,
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.1f))
                 ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Map, null, tint = PrimaryBlue, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Live Coordination Map", color = Color.White, fontWeight = FontWeight.Bold)
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OfflineMapView(
-                            modifier = Modifier.fillMaxWidth().height(220.dp),
-                            centerLatitude = currentLocation?.latitude ?: 17.4426,
-                            centerLongitude = currentLocation?.longitude ?: 78.5006,
-                            zoomLevel = 15.0,
-                            markers = mapMarkers,
-                            showMyLocation = true,
-                            myLatitude = currentLocation?.latitude ?: 0.0,
-                            myLongitude = currentLocation?.longitude ?: 0.0
+                    Icon(Icons.Default.ArrowBack, null, tint = Color.White)
+                }
+
+                Surface(
+                    color = Color.White.copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(20.dp),
+                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.2f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(if (currentLocation != null) SuccessGreen else EmergencyRed))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            if (currentLocation != null) "GPS ACTIVE" else "SEARCHING GPS",
+                            color = Color.White,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
+            }
 
-                Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.weight(1f))
 
-                when (val state = uiState) {
-                    is SosUiState.Idle, is SosUiState.Error, is SosUiState.Loading -> {
-                        SOSDispatchContent(
-                            phoneNumber = phoneNumber,
-                            onPhoneChange = { phoneNumber = it },
-                            selectedType = selectedType,
-                            onTypeSelect = { selectedType = it },
-                            isSending = state is SosUiState.Loading,
-                            error = (state as? SosUiState.Error)?.message,
-                            onTrigger = { viewModel.triggerSos(phoneNumber, selectedType) }
-                        )
-                    }
-                    is SosUiState.Active, is SosUiState.Tracking -> {
-                        val response: SosResponse? = if (state is SosUiState.Active) state.response else (state as SosUiState.Tracking).response as? SosResponse
-                        SOSTrackingContent(
-                            response = response,
-                            onReset = { viewModel.reset() }
-                        )
+            // Main Content Area
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = DarkNavy.copy(alpha = 0.95f),
+                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.05f))
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(28.dp)
+                        .verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    when (val state = uiState) {
+                        is SosUiState.Idle -> {
+                            SOSTriggerContent(
+                                phoneNumber = phoneNumber,
+                                onPhoneChange = { phoneNumber = it },
+                                selectedType = selectedType,
+                                onTypeSelect = { selectedType = it },
+                                isSending = false,
+                                errorMsg = null,
+                                onTrigger = {
+                                    viewModel.triggerSos(phoneNumber, selectedType)
+                                }
+                            )
+                        }
+                        is SosUiState.Loading -> {
+                            CircularProgressIndicator(color = EmergencyRed, modifier = Modifier.size(48.dp))
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text("Activating Emergency Protocol...", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+                        is SosUiState.Active -> {
+                            SOSTrackingContent(
+                                sosResponse = state.response,
+                                trackResponse = null,
+                                onReset = { viewModel.reset() }
+                            )
+                        }
+                        is SosUiState.Tracking -> {
+                            SOSTrackingContent(
+                                sosResponse = null,
+                                trackResponse = state.response,
+                                onReset = { viewModel.reset() }
+                            )
+                        }
+                        is SosUiState.Error -> {
+                            SOSTriggerContent(
+                                phoneNumber = phoneNumber,
+                                onPhoneChange = { phoneNumber = it },
+                                selectedType = selectedType,
+                                onTypeSelect = { selectedType = it },
+                                isSending = false,
+                                errorMsg = state.message,
+                                onTrigger = {
+                                    viewModel.triggerSos(phoneNumber, selectedType)
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -165,13 +209,13 @@ fun SOSScreen(
 }
 
 @Composable
-fun SOSDispatchContent(
+fun SOSTriggerContent(
     phoneNumber: String,
     onPhoneChange: (String) -> Unit,
     selectedType: String,
     onTypeSelect: (String) -> Unit,
     isSending: Boolean,
-    error: String?,
+    errorMsg: String?,
     onTrigger: () -> Unit
 ) {
     val emergencyTypes = listOf(
@@ -209,64 +253,89 @@ fun SOSDispatchContent(
             label = { Text("Contact Number") },
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-            colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+                focusedBorderColor = PrimaryBlue,
+                unfocusedBorderColor = Color.White.copy(alpha = 0.2f)
+            ),
+            shape = RoundedCornerShape(12.dp)
         )
 
-        if (error != null) {
-            Text(error, color = EmergencyRed, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
+        if (errorMsg != null) {
+            Text(errorMsg, color = EmergencyRed, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
         }
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
-
         GlowButton(
-            text = if (isSending) "DISPATCHING..." else "ACTIVATE SOS",
-            onClick = {
-                haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-                onTrigger()
-            },
+            text = if (isSending) "ACTIVATING..." else "TRIGGER SOS",
+            onClick = onTrigger,
             isLoading = isSending,
-            variant = GlowVariant.DANGER,
-            modifier = Modifier.fillMaxWidth().height(64.dp)
+            modifier = Modifier.fillMaxWidth().height(64.dp),
+            variant = GlowVariant.DANGER
         )
     }
 }
 
 @Composable
 fun SOSTrackingContent(
-    response: SosResponse? = null,
-    trackResponse: TrackResponse? = null, // Can accept either
+    sosResponse: SosResponse?,
+    trackResponse: TrackResponse?,
     onReset: () -> Unit
 ) {
-    val trip = trackResponse?.trip
-    val driver = trackResponse?.driver
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(
+            modifier = Modifier
+                .size(80.dp)
+                .clip(CircleShape)
+                .background(EmergencyRed.copy(alpha = 0.2f))
+                .border(2.dp, EmergencyRed, CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(Icons.Default.Emergency, null, tint = EmergencyRed, modifier = Modifier.size(40.dp))
+        }
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = SuccessGreen.copy(alpha = 0.1f)),
-        border = BorderStroke(1.dp, SuccessGreen)
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Text("SOS SIGNAL ACTIVE", color = SuccessGreen, fontWeight = FontWeight.Black)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text("Status: ${trip?.status?.uppercase() ?: "ASSIGNING..."}", color = Color.White, fontWeight = FontWeight.Bold)
-            Text("Assigned Hospital: ${trip?.hospitalName ?: "Searching..."}", color = TextWhite70)
-            
-            if (trip?.estimatedTime != null) {
-                Spacer(modifier = Modifier.height(12.dp))
-                Text("ETA: ${trip.estimatedTime} Minutes", color = PrimaryBlue, fontSize = 24.sp, fontWeight = FontWeight.Black)
-            }
+        Spacer(modifier = Modifier.height(16.dp))
+        Text("SOS ACTIVE", color = EmergencyRed, fontSize = 24.sp, fontWeight = FontWeight.Black)
+        Text("Help is on the way!", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
 
-            Spacer(modifier = Modifier.height(20.dp))
-            
-            Button(
-                onClick = onReset,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.1f))
-            ) {
-                Text("CANCEL / NEW REQUEST")
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Surface(
+            color = Color.White.copy(alpha = 0.05f),
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Emergency Details", color = TextWhite70, fontSize = 12.sp)
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                if (sosResponse != null) {
+                    Text("Case ID: ${sosResponse.tripId}", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text("Status: ${sosResponse.status.uppercase()}", color = SuccessGreen, fontWeight = FontWeight.Bold)
+                } else if (trackResponse != null) {
+                    Text("Case ID: ${trackResponse.trip?.id ?: "N/A"}", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text("Status: ${trackResponse.trip?.status?.uppercase() ?: "ACTIVE"}", color = SuccessGreen, fontWeight = FontWeight.Bold)
+                    
+                    trackResponse.driver?.let { driver ->
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text("Driver: ${driver.fullName}", color = Color.White)
+                        Text("Vehicle: ${driver.vehicleNumber}", color = Color.White)
+                    }
+                } else {
+                    Text("Provisioning details...", color = Color.White)
+                }
             }
         }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        GlowButton(
+            text = "CANCEL EMERGENCY",
+            onClick = onReset,
+            modifier = Modifier.fillMaxWidth(),
+            variant = GlowVariant.PRIMARY
+        )
     }
 }

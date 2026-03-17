@@ -29,7 +29,7 @@ class PoliceDashboardViewModel(
 
     private var pollJob: Job? = null
 
-    fun startPolling(stationId: String?, stationName: String?, intervalMs: Long = 8000L) {
+    fun startPolling(stationId: String?, stationName: String?, intervalMs: Long = 3000L) {
         if (pollJob?.isActive == true) return
         pollJob = viewModelScope.launch {
             while (true) {

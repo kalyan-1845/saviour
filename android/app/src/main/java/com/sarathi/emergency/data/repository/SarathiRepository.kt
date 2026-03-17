@@ -122,8 +122,8 @@ class SarathiRepository(
     private suspend fun <TBody, TData> safeApiCall(
         call: suspend () -> Response<TBody>,
         mapper: (TBody) -> TData
-    ): RepoResult<TData> {
-        return try {
+    ): RepoResult<TData> = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        try {
             val response = call()
             if (response.isSuccessful) {
                 val body = response.body()
