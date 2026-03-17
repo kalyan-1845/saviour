@@ -45,7 +45,7 @@ class DriverViewModel(
                     val email = sessionManager.getDriver()?.email
                     
                     when (val result = repository.getAssignedTrip(driverId, email)) {
-                        is RepoResult.Success -> {
+                        is RepoResult.Success<AssignedTripResponse> -> {
                             val trip = result.data.trip
                             if (trip != null && trip.status != "completed" && trip.status != "cancelled") {
                                 if (_uiState.value !is DriverUiState.Assigned || (_uiState.value as? DriverUiState.Assigned)?.trip?.id != trip.id) {
@@ -67,13 +67,13 @@ class DriverViewModel(
         }
     }
 
-    fun login(request: DriverLoginRequest) {
+    fun login(request: LoginRequest) {
         viewModelScope.launch {
             _uiState.value = DriverUiState.Loading
             when (val result = repository.driverLogin(request)) {
-                is RepoResult.Success -> {
+                is RepoResult.Success<LoginResponse> -> {
                     if (result.data.success && result.data.driver != null) {
-                        sessionManager.saveDriver(result.data.driver)
+                        sessionManager.saveDriverSession(result.data.driver)
                         sessionManager.saveAuthToken(result.data.token ?: "")
                         _uiState.value = DriverUiState.AuthSuccess(result.data.driver)
                     } else {
@@ -91,7 +91,7 @@ class DriverViewModel(
         viewModelScope.launch {
             _uiState.value = DriverUiState.Loading
             when (val result = repository.driverRegister(request)) {
-                is RepoResult.Success -> {
+                is RepoResult.Success<RegisterResponse> -> {
                     if (result.data.success && result.data.driver != null) {
                         sessionManager.saveDriverSession(result.data.driver)
                         sessionManager.saveAuthToken(result.data.token ?: "")
